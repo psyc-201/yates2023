@@ -31,7 +31,8 @@ Repository: https://github.com/annapusok731/yates2023.git
 
 ### Power Analysis
 
-I haven't conducted power analysis yet because I don't know how to, but will update this section after the power analysis class in November.
+I calculated with power for Yates and Lewkowicz (2023) with G-Power. They had power of 1.0 with the effect size of 0.743 and n=128.
+Based on these analyses, I need an n of 17 to have an actual power of 0.82 (however, I'm hoping to do additional analyses with an additional group {ASD group}, so I did additoonal power analyses bvased on a paper that has done similar task with two groups and got that, I'd need 24 participants in each group.)
 
 ### Planned Sample
 
