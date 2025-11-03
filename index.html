@@ -15,6 +15,7 @@
     <script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@1.1.3"></script>
     <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
     <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
     <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
     
     <style>
@@ -82,7 +83,7 @@
         }
         
         .same-btn {
-            background-color: #4CAF50 !important;
+            background-color: #ff914d !important;
             color: white !important;
             padding: 14px 36px !important;
             font-size: 20px !important;
@@ -93,11 +94,11 @@
         }
         
         .same-btn:hover {
-            background-color: #45a049 !important;
+            background-color: #ff914d !important;
         }
         
         .different-btn {
-            background-color: #f44336 !important;
+            background-color: #38b6ff !important;
             color: white !important;
             padding: 14px 36px !important;
             font-size: 20px !important;
@@ -108,7 +109,7 @@
         }
         
         .different-btn:hover {
-            background-color: #da190b !important;
+            background-color: #38b6ff !important;
         }
         
         .feedback-correct {
@@ -121,6 +122,49 @@
             color: #f44336;
             font-size: 24px;
             font-weight: bold;
+        }
+        
+        .demographics-form {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+            padding: 20px;
+        }
+        
+        .demographics-form .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .demographics-form label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .demographics-form input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        
+        .demographics-form input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        .demographics-form .radio-option {
+            display: block;
+            margin: 8px 0;
+            font-size: 16px;
+        }
+        
+        .fixation-cross {
+            font-size: 48px;
+            font-weight: bold;
+            color: black;
         }
     </style>
 </head>
@@ -166,19 +210,19 @@
                 <h3>Please confirm:</h3>
                 <label>
                     <input type="checkbox" id="consent-age" required>
-                    I am 18 years of age or older
+                    I confirm that I am 18 years of age or older
                 </label>
                 <label>
                     <input type="checkbox" id="consent-understand" required>
-                    I have read and understand the study procedures
+                    I have read the consent form
                 </label>
                 <label>
                     <input type="checkbox" id="consent-voluntary" required>
-                    I understand participation is voluntary and I can withdraw at any time
+                    I understand that participation is voluntary and I can withdraw at any time
                 </label>
             </div>
         `,
-        choices: ['I Consent - Begin Study'],
+        choices: ['I Consent to Participate in This Study'],
         button_html: '<button class="jspsych-btn">%choice%</button>',
         on_load: function() {
             // Store references to checkboxes that we can access later
@@ -222,10 +266,11 @@
         stimulus: `
             <h1>Instructions</h1>
             <p>In this task, you will see two pictures of faces side-by-side.</p>
-            <p>You will have to decide whether the top parts, the yellow parts of the faces are the same or different.</p>
+            <p>You will have to decide whether the top parts of the faces are the same or different.</p>
             <p>To answer, click on either the "SAME" or "DIFFERENT" buttons below the images.</p>
             <p>Try to answer as quickly as you can.</p>
             <p>There will be practice trials. Once you click on "Next" after the second practice, the experiment will automatically start.</p>
+            <p>After the experiment, we ask you to fill out two surveys.</p>
         `,
         choices: ["Let's Practice!"],
         button_html: '<button class="jspsych-btn">%choice%</button>'
@@ -255,6 +300,14 @@
         `;
     }
     
+    // Helper function to create fixation cross
+    const createFixation = () => ({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '<div class="fixation-cross">+</div>',
+        choices: "NO_KEYS",
+        trial_duration: 1200
+    });
+    
     // Practice trials
     const practiceBaseUrl = 'https://raw.githubusercontent.com/annapusok731/lookit-stimuli-template/master/';
     
@@ -279,48 +332,62 @@
     const practiceProcedures = [];
     
     practiceTrials.forEach((trial, index) => {
-        // Randomize left/right
-        const images = Math.random() < 0.5 ? trial.images : [trial.images[1], trial.images[0]];
-        
-        const practiceTrial = {
-            type: jsPsychHtmlButtonResponse,
-            stimulus: createTrialStimulus(images[0], images[1], index + 1, practiceTrials.length, true),
-            choices: ['SAME', 'DIFFERENT'],
-            button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
-            data: {
-                task: 'practice',
-                trial_number: index + 1,
-                correct_answer: trial.correctAnswer,
-                image_left: images[0],
-                image_right: images[1]
-            },
-            on_finish: function(data) {
-                data.response_label = data.response === 0 ? 'same' : 'different';
-                data.correct = data.response_label === data.correct_answer;
+        // Create a practice loop that repeats until correct
+        const practiceLoop = {
+            timeline: [
+                createFixation(),
+                {
+                    type: jsPsychHtmlButtonResponse,
+                    stimulus: function() {
+                        // Randomize left/right on each attempt
+                        const images = Math.random() < 0.5 ? trial.images : [trial.images[1], trial.images[0]];
+                        // Store images for this attempt
+                        jsPsych.data.addProperties({
+                            current_practice_images: images
+                        });
+                        return createTrialStimulus(images[0], images[1], index + 1, practiceTrials.length, true);
+                    },
+                    choices: ['SAME', 'DIFFERENT'],
+                    button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
+                    data: {
+                        task: 'practice',
+                        trial_number: index + 1,
+                        correct_answer: trial.correctAnswer
+                    },
+                    on_finish: function(data) {
+                        data.response_label = data.response === 0 ? 'same' : 'different';
+                        data.correct = data.response_label === data.correct_answer;
+                    }
+                },
+                {
+                    type: jsPsychHtmlButtonResponse,
+                    stimulus: function() {
+                        const lastTrial = jsPsych.data.get().last(1).values()[0];
+                        if (lastTrial.correct) {
+                            return `
+                                <h1 class="feedback-correct">Great job!</h1>
+                                <p style="font-size: 18px; margin-top: 20px;">The top parts of the faces are ${lastTrial.correct_answer}!</p>
+                            `;
+                        } else {
+                            return `
+                                <h1 class="feedback-incorrect">Try again!</h1>
+                                <p style="font-size: 18px; margin-top: 20px;">The top parts of the faces are ${lastTrial.correct_answer}. Let's practice this one again.</p>
+                            `;
+                        }
+                    },
+                    choices: ['Next'],
+                    button_html: '<button class="jspsych-btn">%choice%</button>'
+                }
+            ],
+            loop_function: function() {
+                // Get the last practice trial response
+                const practiceData = jsPsych.data.get().filter({task: 'practice'}).last(1).values()[0];
+                // If incorrect, repeat the loop
+                return !practiceData.correct;
             }
         };
         
-        const feedback = {
-            type: jsPsychHtmlButtonResponse,
-            stimulus: function() {
-                const lastTrial = jsPsych.data.get().last(1).values()[0];
-                if (lastTrial.correct) {
-                    return `
-                        <h1 class="feedback-correct">Great job!</h1>
-                        <p style="font-size: 18px; margin-top: 20px;">The top parts of the faces are ${lastTrial.correct_answer}!</p>
-                    `;
-                } else {
-                    return `
-                        <h1 class="feedback-incorrect">Try again!</h1>
-                        <p style="font-size: 18px; margin-top: 20px;">The top parts of the faces are ${lastTrial.correct_answer}. Let's try another practice.</p>
-                    `;
-                }
-            },
-            choices: ['Next'],
-            button_html: '<button class="jspsych-btn">%choice%</button>'
-        };
-        
-        practiceProcedures.push(practiceTrial, feedback);
+        practiceProcedures.push(practiceLoop);
     });
     
     // Add transition message after practice
@@ -328,7 +395,7 @@
         type: jsPsychHtmlButtonResponse,
         stimulus: `
             <h1 class="feedback-correct">Practice Complete!</h1>
-            <p style="font-size: 18px; margin-top: 20px;">Great job! Now starting the main experiment.</p>
+            <p style="font-size: 18px; margin-top: 20px;">Great job! Now starting the experiment.</p>
         `,
         choices: ['Continue'],
         button_html: '<button class="jspsych-btn">%choice%</button>'
@@ -358,8 +425,8 @@
                 if (cond === 'diff_align') {
                     leftRightStim.push({
                         images: [
-                            baseUrl + 'misaligned/' + image1 + '_' + image2 + '.jpg',
-                            baseUrl + 'misaligned/' + image2 + '_' + image1 + '.jpg'
+                            baseUrl + 'aligned/' + image1 + '_' + image2 + '.jpg',
+                            baseUrl + 'aligned/' + image2 + '_' + image1 + '.jpg'
                         ],
                         condition: 'diff_align',
                         correctAnswer: 'different'
@@ -367,8 +434,8 @@
                 } else if (cond === 'diff_misalign') {
                     leftRightStim.push({
                         images: [
-                            baseUrl + 'aligned/' + image1 + '_' + image2 + '.jpg',
-                            baseUrl + 'aligned/' + image2 + '_' + image1 + '.jpg'
+                            baseUrl + 'misaligned/' + image1 + '_' + image2 + '.jpg',
+                            baseUrl + 'misaligned/' + image2 + '_' + image1 + '.jpg'
                         ],
                         condition: 'diff_misalign',
                         correctAnswer: 'different'
@@ -443,22 +510,27 @@
         return trials.map((trial, index) => {
             const images = Math.random() < 0.5 ? trial.images : [trial.images[1], trial.images[0]];
             return {
-                type: jsPsychHtmlButtonResponse,
-                stimulus: createTrialStimulus(images[0], images[1], index + 1, 96, false),
-                choices: ['SAME', 'DIFFERENT'],
-                button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
-                data: {
-                    task: 'main',
-                    trial_number: index + 1,
-                    condition: trial.condition,
-                    correct_answer: trial.correctAnswer,
-                    image_left: images[0],
-                    image_right: images[1]
-                },
-                on_finish: function(data) {
-                    data.response_label = data.response === 0 ? 'same' : 'different';
-                    data.correct = data.response_label === data.correct_answer;
-                }
+                timeline: [
+                    createFixation(),
+                    {
+                        type: jsPsychHtmlButtonResponse,
+                        stimulus: createTrialStimulus(images[0], images[1], index + 1, 96, false),
+                        choices: ['SAME', 'DIFFERENT'],
+                        button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
+                        data: {
+                            task: 'main',
+                            trial_number: index + 1,
+                            condition: trial.condition,
+                            correct_answer: trial.correctAnswer,
+                            image_left: images[0],
+                            image_right: images[1]
+                        },
+                        on_finish: function(data) {
+                            data.response_label = data.response === 0 ? 'same' : 'different';
+                            data.correct = data.response_label === data.correct_answer;
+                        }
+                    }
+                ]
             };
         });
     }
@@ -476,7 +548,9 @@
         
         // Main trial images
         mainTrials.forEach(trial => {
-            urls.push(trial.data.image_left, trial.data.image_right);
+            const trialTimeline = trial.timeline;
+            const imageTrial = trialTimeline[1];
+            urls.push(imageTrial.data.image_left, imageTrial.data.image_right);
         });
         
         return urls;
@@ -567,11 +641,129 @@
             options: ["Not True", "Sometimes True", "Often True", "Almost Always True"],
             required: true
         })),
-        button_label: 'Submit Questionnaire'
+        button_label: 'Finish Questionnaire'
     };
     
-    // Exit fullscreen
+    // Exit fullscreen after main trials
     const exit_fullscreen = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: false
+    };
+    
+    // Demographics questionnaire - combined with text and multiple choice
+    const demographics = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: `
+            <h1>Demographics</h1>
+            <div class="demographics-form">
+                <div class="form-group">
+                    <label for="age">What is your age?</label>
+                    <input type="text" id="age" name="age" placeholder="Enter your age in years" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>What is your race/ethnicity?</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="American Indian or Alaska Native" required> American Indian or Alaska Native</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="Asian"> Asian</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="Black or African American"> Black or African American</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="Hispanic or Latino"> Hispanic or Latino</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="Native Hawaiian or Other Pacific Islander"> Native Hawaiian or Other Pacific Islander</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="White"> White</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="Other"> Other</label>
+                </div>
+                
+                <div class="form-group">
+                    <label>What is your sex?</label>
+                    <label class="radio-option"><input type="radio" name="sex" value="Male" required> Male</label>
+                    <label class="radio-option"><input type="radio" name="sex" value="Female"> Female</label>
+                    <label class="radio-option"><input type="radio" name="sex" value="Non-binary"> Non-binary</label>
+                    <label class="radio-option"><input type="radio" name="sex" value="Prefer not to say"> Prefer not to say</label>
+                    <label class="radio-option"><input type="radio" name="sex" value="Other"> Other</label>
+                </div>
+                
+                <div class="form-group">
+                    <label>What is your highest level of education?</label>
+                    <label class="radio-option"><input type="radio" name="education" value="Less than high school" required> Less than high school</label>
+                    <label class="radio-option"><input type="radio" name="education" value="High school graduate (or equivalent)"> High school graduate (or equivalent)</label>
+                    <label class="radio-option"><input type="radio" name="education" value="Some college, no degree"> Some college, no degree</label>
+                    <label class="radio-option"><input type="radio" name="education" value="Associate's degree"> Associate's degree</label>
+                    <label class="radio-option"><input type="radio" name="education" value="Bachelor's degree"> Bachelor's degree</label>
+                    <label class="radio-option"><input type="radio" name="education" value="Master's degree"> Master's degree</label>
+                    <label class="radio-option"><input type="radio" name="education" value="Professional degree (e.g., MD, JD)"> Professional degree (e.g., MD, JD)</label>
+                    <label class="radio-option"><input type="radio" name="education" value="Doctorate degree (e.g., PhD)"> Doctorate degree (e.g., PhD)</label>
+                </div>
+                
+                <div class="form-group">
+                    <label>What best describes where you live?</label>
+                    <label class="radio-option"><input type="radio" name="living_status" value="Urban" required> Urban</label>
+                    <label class="radio-option"><input type="radio" name="living_status" value="Suburban"> Suburban</label>
+                    <label class="radio-option"><input type="radio" name="living_status" value="Rural"> Rural</label>
+                </div>
+            </div>
+        `,
+        choices: ['Submit'],
+        button_html: '<button class="jspsych-btn" id="demographics-submit">%choice%</button>',
+        on_load: function() {
+            const submitBtn = document.getElementById('demographics-submit');
+            const ageInput = document.getElementById('age');
+            const raceInputs = document.querySelectorAll('input[name="race_ethnicity"]');
+            const sexInputs = document.querySelectorAll('input[name="sex"]');
+            const eduInputs = document.querySelectorAll('input[name="education"]');
+            const livingInputs = document.querySelectorAll('input[name="living_status"]');
+            
+            // Store form data in trial object
+            this.demographicsData = {
+                age: '',
+                race_ethnicity: '',
+                sex: '',
+                education: '',
+                living_status: ''
+            };
+            
+            const self = this;
+            
+            // Update stored data when inputs change
+            ageInput.addEventListener('input', function() {
+                self.demographicsData.age = this.value;
+            });
+            
+            raceInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    if (this.checked) self.demographicsData.race_ethnicity = this.value;
+                });
+            });
+            
+            sexInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    if (this.checked) self.demographicsData.sex = this.value;
+                });
+            });
+            
+            eduInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    if (this.checked) self.demographicsData.education = this.value;
+                });
+            });
+            
+            livingInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    if (this.checked) self.demographicsData.living_status = this.value;
+                });
+            });
+        },
+        on_finish: function(data) {
+            // Use stored data
+            const stored = this.demographicsData || {};
+            data.age = stored.age;
+            data.race_ethnicity = stored.race_ethnicity;
+            data.sex = stored.sex;
+            data.education = stored.education;
+            data.living_status = stored.living_status;
+        }
+    };
+    
+    // Exit fullscreen after demographics
+    const exit_fullscreen_demographics = {
         type: jsPsychFullscreen,
         fullscreen_mode: false
     };
@@ -593,12 +785,11 @@
             <p>Thank you for participating in this study.</p>
             
             <h2>What Are We Studying?</h2>
-            <p>Thank you for participating in the study! In this experiment, we were looking at how people perceive faces. 
-                Specifically, we used a task called the composite face effect. In this task, we showed you faces that were made by combining the top half of one person's face with the bottom half of another person's face.
-                The idea behind this is that when the halves are aligned, people tend to automatically process the face as a whole, which can make it harder to focus on just the top or bottom half. When the halves are misaligned, it's easier to see the two halves separately. 
-                By comparing your responses across these conditions, we can learn about how people naturally integrate facial features and how this affects face recognition.
-                We also have a study for young kids, and try to see how holistic face perception develops across all ages!
-                To learn more about the lab's work, visit: https://dnlab.ucsd.edu/ or email the graduate student in charge: Anna Pusok at annapusok@ucsd.edu
+            <p>Thank you for participating in the study! In this experiment, we were looking at how people perceive faces.<p> 
+            <p>Specifically, we used a task called the composite face effect. In this task, we showed you faces that were made by combining the top half of one person's face with the bottom half of another person's face. The idea behind this is that when the halves are aligned, people tend to automatically process the face as a whole, which can make it harder to focus on just the top or bottom half. When the halves are misaligned, it's easier to see the two halves separately.<p> 
+            <p>By comparing your responses across these conditions, we can learn about how people naturally integrate facial features and how this affects face recognition.<p>
+            <p>We also have a study for young kids, and try to see how holistic face processing develops across all ages!<p>
+            <p>To learn more about the lab's work, visit: https://dnlab.ucsd.edu/ or email the graduate student in charge: Anna Pusok at annapusok@ucsd.edu<p>
             </p>
         `,
         choices: ['Close Window'],
@@ -618,7 +809,7 @@
         practiceComplete,
         ...mainTrials,
         questionnaire,
-        exit_fullscreen,
+        demographics,
         save_data,
         completion
     ];
