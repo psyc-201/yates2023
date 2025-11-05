@@ -55,13 +55,13 @@
             align-items: flex-start;
             gap: 5vw;
             margin: 30px 0;
-            height: 40vh;
+            height: 30vh;
         }
         
         .face-images img {
             width: 35vw;
             max-width: 500px;
-            height: 40vh;
+            height: 30vh;
             object-fit: contain;
             border-radius: 12px;
         }
@@ -290,12 +290,12 @@
             
         return `
             <div style="text-align: center;">
-                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">${progressText}</p>
+                <p style="color: #666; font-size: 20px; margin-top: 10px; ">${progressText}</p>
                 <div class="face-images">
                     <img src="${imageLeft}" alt="Face 1">
                     <img src="${imageRight}" alt="Face 2">
                 </div>
-                <h2 class="trial-question">Are the top parts of the faces, the yellow parts, the same or different?</h2>
+                <h2 class="trial-question">Are the top parts of the faces the same or different?</h2>
             </div>
         `;
     }
@@ -357,6 +357,7 @@
                     on_finish: function(data) {
                         data.response_label = data.response === 0 ? 'same' : 'different';
                         data.correct = data.response_label === data.correct_answer;
+                        data.response_time_ms = data.rt;
                     }
                 },
                 {
@@ -528,6 +529,8 @@
                         on_finish: function(data) {
                             data.response_label = data.response === 0 ? 'same' : 'different';
                             data.correct = data.response_label === data.correct_answer;
+                            // Explicitly save RT
+                            data.response_time_ms = data.rt;
                         }
                     }
                 ]
