@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Replication Author[s]: Anna Pusok (annapusok@ucsd.edu)">
-<meta name="dcterms.date" content="2025-10-25">
+<meta name="dcterms.date" content="2025-11-05">
 
 <title>Replication of Study Robust holistic face processing in early childhood during the COVID-19 pandemic by Yates &amp; Lewkowicz (2023, Journal of Experimental Child Psychology)</title>
 <style>
@@ -70,6 +70,35 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -102,10 +131,23 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#confirmatory-analysis" id="toc-confirmatory-analysis" class="nav-link" data-scroll-target="#confirmatory-analysis">Confirmatory analysis</a></li>
   <li><a href="#exploratory-analyses" id="toc-exploratory-analyses" class="nav-link" data-scroll-target="#exploratory-analyses">Exploratory analyses</a></li>
   </ul></li>
+  <li><a href="#load-libraries" id="toc-load-libraries" class="nav-link" data-scroll-target="#load-libraries">Load libraries</a></li>
+  <li><a href="#set-working-directory-to-where-your-csv-files-are" id="toc-set-working-directory-to-where-your-csv-files-are" class="nav-link" data-scroll-target="#set-working-directory-to-where-your-csv-files-are">Set working directory to where your CSV files are</a></li>
+  <li><a href="#read-and-combine-all-csv-files" id="toc-read-and-combine-all-csv-files" class="nav-link" data-scroll-target="#read-and-combine-all-csv-files">Read and combine all CSV files</a></li>
+  <li><a href="#display-basic-info" id="toc-display-basic-info" class="nav-link" data-scroll-target="#display-basic-info">Display basic info</a></li>
+  <li><a href="#filter-main-task-trials-only-exclude-practice-and-other-non-trial-rows" id="toc-filter-main-task-trials-only-exclude-practice-and-other-non-trial-rows" class="nav-link" data-scroll-target="#filter-main-task-trials-only-exclude-practice-and-other-non-trial-rows">Filter main task trials only (exclude practice and other non-trial rows)</a></li>
+  <li><a href="#create-alignment-and-correct_response-variables" id="toc-create-alignment-and-correct_response-variables" class="nav-link" data-scroll-target="#create-alignment-and-correct_response-variables">Create alignment and correct_response variables</a></li>
+  <li><a href="#accuracy-analysis" id="toc-accuracy-analysis" class="nav-link" data-scroll-target="#accuracy-analysis">===== ACCURACY ANALYSIS =====</a></li>
+  <li><a href="#calculate-accuracy-by-subject-and-condition" id="toc-calculate-accuracy-by-subject-and-condition" class="nav-link" data-scroll-target="#calculate-accuracy-by-subject-and-condition">Calculate accuracy by subject and condition</a></li>
+  <li><a href="#overall-means-and-ses" id="toc-overall-means-and-ses" class="nav-link" data-scroll-target="#overall-means-and-ses">Overall means and SEs</a></li>
+  <li><a href="#statistical-tests-for-accuracy" id="toc-statistical-tests-for-accuracy" class="nav-link" data-scroll-target="#statistical-tests-for-accuracy">Statistical tests for accuracy</a></li>
+  <li><a href="#accuracy-plot" id="toc-accuracy-plot" class="nav-link" data-scroll-target="#accuracy-plot">Accuracy plot</a>
+  <ul class="collapse">
   <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
   <ul class="collapse">
   <li><a href="#summary-of-replication-attempt" id="toc-summary-of-replication-attempt" class="nav-link" data-scroll-target="#summary-of-replication-attempt">Summary of Replication Attempt</a></li>
   <li><a href="#commentary" id="toc-commentary" class="nav-link" data-scroll-target="#commentary">Commentary</a></li>
+  </ul></li>
   </ul></li>
   </ul>
 </nav>
@@ -132,7 +174,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 25, 2025</p>
+      <p class="date">November 5, 2025</p>
     </div>
   </div>
   
@@ -159,30 +201,32 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="methods">Methods</h2>
 <section id="power-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="power-analysis">Power Analysis</h3>
-<p>Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size. Considerations of feasibility for selecting planned sample size.</p>
+<p>I calculated with power for Yates and Lewkowicz (2023) with G-Power. They had power of 1.0 with the effect size of 0.743 and n=128. Based on these analyses, I need an n of 17 to have an actual power of 0.82 (however, I’m hoping to do additional analyses with an additional group {ASD group}, so I did additoonal power analyses bvased on a paper that has done similar task with two groups and got that, I’d need 24 participants in each group.)</p>
 </section>
 <section id="planned-sample" class="level3">
 <h3 class="anchored" data-anchor-id="planned-sample">Planned Sample</h3>
-<p>For the adult sample, we are aiming for 24 neurotypical adults. This sample size is according to Hsiung &amp; Chien (2024) who has done a study of the composite face effect in adults with ASD as well as neurotypical adults. They conducted a power analysis based on and determined that 24 neurotypical and ASD adults are a good number.</p>
-<p>Exclusion criteria: Responses faster than 200 ms or slower than 4000 ms were excluded, removing only 2% of the trials. Participants will also be excluded if they had all “same” or all “different” responses, which would be an indicator of not paying attention.</p>
+<p>About 24 neurotypical adult (# female gender, # other gender) participants (M age = X years, SD = Y, range = X-Y) will be recruited for the final project. This sample size was according to Hsiung &amp; Chien (2024). “This sample size was calculated according to Rosner et al.&nbsp;(2005) and was determined based on power consideration (i.e., we set the type 1 error (α) to 0.05, the power (1-β) at approximately 0.84, leading to an expected sample size of 24).” Exclusion criteria(s): Participants will also be excluded from analyses if they respond at chance level (50% correct). Responses faster than 200 ms and average response time exceeding ±2 standard deviations from each participant’s mean will also be excluded.</p>
 </section>
 <section id="materials" class="level3">
 <h3 class="anchored" data-anchor-id="materials">Materials</h3>
-<p>All materials - can quote directly from original article - just put the text in quotations and note that this was followed precisely. Or, quote directly and just point out exceptions to what was described in the original article.</p>
+<p>Composite face stimuli will be created using Canva from the Chicago Face Database at (https://www.chicagofaces.org/). Faces will be grayscale images of White males and females with a neutral expression looking directly into the camera. 48 pairs of composite face stimuli (24 male and 24 female pairs) were presented to each participant. “Given that misalignment of inner face features can reduce the composite face effect (Curby &amp; Entenman, 2016; but see Kurbel et al., 2021, for robust results regardless of perceptual fit), we ensured as much as possible that each individual face was paired with a same-gender face of similar size/shape and skin tone. In addition, as recommended for the composite face task (Rossion &amp; Retter, 2015), we included a small gap between the top and bottom halves of each composite face.”</p>
+<p>“For each identity pair, we created 8 different composite faces from combinations of the top and bottom halves of the faces (these can be seen in Fig. 1 A). Four of these composite faces consisted of spatially aligned top and bottom halves of faces, and the other four consisted of spatially misaligned top and bottom halves of faces (in the misaligned composite faces, the top half of the face was shifted ∼1.2 cm to the left of the bottom half of the face). As can be seen in Fig. 1A, Composite Face AA consisted of the top and bottom halves of Identity A, Composite Face AB consisted of the top half of Identity A and the bottom half of Identity B, Composite Face BA consisted of the top half of Identity B and the bottom half of Identity A, and Composite Face BB consisted of the top and bottom halves of Identity B. To minimize the impact of external face features, we removed all hair and ears from the original images by using Adobe Photoshop 2020 and added a slight purple–pink tint to the top halves of the faces to draw children’s attention to the top halves (de Heering et al., 2007). The full stimulus set is available at a public GitHub link: [I’ll add my GitHub repo here once the project is done.]”</p>
 </section>
 <section id="procedure" class="level3">
 <h3 class="anchored" data-anchor-id="procedure">Procedure</h3>
-<p>Sona</p>
-<p>The first part of the experiment consisted of two practice trials. During the first of these trials, participants saw a pair of spatially aligned composite faces where the top halves were of different faces. One composite face was presented on one side of the screen, and the other composite face was presented on the other side of the screen.” Adults are asked to decide whether the yellow parts of the faces (i.e., the tops) of these composite faces were the same or different. Participants will receive feedback during the practice trials. Thus an incroeect response will prompt them to “Try Again.” A correct response will affirm them in their decisions: “Great job! The yellow parts of the face are the same.” During the second practice trial, participants will see a pair of spatially misaligned composite faces where the top halves were of the same face and were once again asked whether the yellow parts” of these faces were the same or different. Again, if participants made an incorrect choice, they will be prompted to try again, and they got positive response for the correct choice.</p>
-<p>As soon as the practice trials were completed, the children were given 36 test trials during which we presented four different types of stimulus pairs. These pairs were (a) aligned–same, where the top halves of the two composite faces depicted the same identity (e.g., AA and AB) and where the top and bottom halves were horizontally aligned, (b) aligned–different, where the top halves of two composite faces depicted different identities (e.g., BA and AB) and where the top and bottom halves were horizontally aligned, (c) misaligned–same, where the top halves of two composite faces depicted the same identity but were horizontally offset, and (d) misaligned–different, where the top halves of two composite faces depicted different identities but were horizontally offset (Fig. 1A, right). Fig. 1B shows an example of the types of stimuli and response buttons presented during an aligned–same trial.</p>
+<p>After gaining approval from the Institutional Review Board, participants were recruited through Sona and received course credit for participation. After enrolling through their Sona accounts, participants completed the experiment online.</p>
+<p>“The first part of the experiment consisted of two practice trials. During the first of these trials, participants saw a pair of spatially aligned composite faces where the top halves were of different faces. One composite face was presented on one side of the screen, and the other composite face was presented on the other side of the screen.” Adults are asked to decide whether the yellow parts of the faces (i.e., the tops) of these composite faces were the same or different. Participants will receive feedback during the practice trials. Thus an incorrect response will prompt them to “Try Again.” A correct response will confirm their accuracy: “Great job! The yellow parts of the face are the same.” During the second practice trial, participants will see a pair of spatially misaligned composite faces where the top halves were of the same face and were once again asked whether the yellow parts” of these faces were the same or different. Again, if participants made an incorrect choice, they will be prompted to try again, and they got positive response for the correct choice.</p>
+<p>After the practice trials are completed, adults were given 72 test trials during which “we presented four different types of stimulus pairs. These pairs were (a) aligned–same, where the top halves of the two composite faces depicted the same identity (e.g., AA and AB) and where the top and bottom halves were horizontally aligned, (b) aligned–different, where the top halves of two composite faces depicted different identities (e.g., BA and AB) and where the top and bottom halves were horizontally aligned, (c) misaligned–same, where the top halves of two composite faces depicted the same identity but were horizontally offset, and (d) misaligned–different, where the top halves of two composite faces depicted different identities but were horizontally offset (Fig. 1A, right). Fig. 1B shows an example of the types of stimuli and response buttons presented during an aligned–same trial.”</p>
+<p>“During each trial, participants were prompted to respond whether the faces were the same or different by clicking on one of two buttons visible on the screen corresponding to these choices (see Fig. 1B). Participants were also reminded after 10, 20, and 30 trials that they were supposed to answer whether the”yellow parts” of the face were the same or different. A click of one of the two response buttons was required to advance the experiment to the next trial. Participants had unlimited time to respond.”</p>
+<p>Once participants complete the experiment, they will be asked to complete a demographic survey indicating their age, race and ethnicity, highest level of education completed, current employment status and their location defined as “urban,” “suburban” or “rural.” Participants were also asked to complete the Social Responsiveness Scale (SRS-2 Adult) about their social abilities.</p>
 </section>
 <section id="analysis-plan" class="level3">
 <h3 class="anchored" data-anchor-id="analysis-plan">Analysis Plan</h3>
-<p>“Response accuracy The data of primary interest were the accuracy scores obtained in the same trials. Specifically, lower accuracy scores in the aligned–same trials than in the misaligned–same trials is generally considered to reflect holistic processing. The data of secondary interest were the accuracy scores obtained in the different trials. In this case, the accuracy scores in the aligned–different trials and in the misaligned– different trials should be the same. These different trial scores indicate how well children were able to detect differences when the top halves of the composite faces actually differed and, thus, provide a baseline against which to evaluate the accuracy data from the same trials. To statistically assess response accuracy, we performed mixed repeated-measures analysis of variance (ANOVA) models with alignment as a within-participants factor, age and gender as between-participants factors, and partic- ipant as a random effect. For all analyses, we included gender as a predictor given prior research show- ing that there may be differences in holistic face processing even in early childhood (Stajduhar et al., 2022). Same trials. Fig. 2 shows the accuracy scores in the same trials, and it can be seen that the predicted effect was present at each age. That is, at each age children exhibited lower accuracy scores when the same top halves of a face were aligned with the bottom halves of two different faces than when they were misaligned. A mixed repeated-measures ANOVA of the accuracy scores.””</p>
+<p>“Response accuracy The data of primary interest were the accuracy scores obtained in the same trials. Specifically, lower accuracy scores in the aligned–same trials than in the misaligned–same trials is generally considered to reflect holistic processing. The data of secondary interest were the accuracy scores obtained in the different trials. In this case, the accuracy scores in the aligned–different trials and in the misaligned–different trials should be the same. These different trial scores indicate how well children were able to detect differences when the top halves of the composite faces actually differed and, thus, provide a baseline against which to evaluate the accuracy data from the same trials. To statistically assess response accuracy, we performed mixed repeated-measures analysis of variance (ANOVA) models with alignment as a within-participants factor, age and gender as between-participants factors, and participant as a random effect. For all analyses, we included gender as a predictor given prior research showing that there may be differences in holistic face processing even in early childhood (Stajduhar et al., 2022).”</p>
 </section>
 <section id="differences-from-original-study" class="level3">
 <h3 class="anchored" data-anchor-id="differences-from-original-study">Differences from Original Study</h3>
-<p>Although I have used the same face database (Chicago Face Database) for my study, the stimuli was different in a sense that since we doubled the trial number from the original study, I will use double the stimuli number. Yates and Lewkowicz presented 24 pairs of composite face stimuli to each participant, and i plan to present 48 pairs (24 female composite faces and 24 male composite faces.)</p>
+<p>My study diverged from Yates and Lewkowicz in a few methodological aspects. Although both studies used the Chicago Face Database, I doubled the stimulus presentation (given that my sample size included adults instead of children), showing participants 48 unique composite face pairs (evenly split between male and female faces) rather than 24. I also modified the attentional cue by replacing the original purple-pink tint applied to top face halves with a yellow tint for enhanced visibility. Additionally, I extended the dependent measures beyond the original study by recording reaction times, establishing RT-based exclusion criteria, and performing supplementary RT related analyses. Finally, I added a demographic questionnaire and the Social Responsiveness Scale (SRS-2 Adult) to assess participants social abilities.</p>
 </section>
 <section id="methods-addendum-post-data-collection" class="level3">
 <h3 class="anchored" data-anchor-id="methods-addendum-post-data-collection">Methods Addendum (Post Data Collection)</h3>
@@ -201,18 +245,68 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="results">Results</h2>
 <section id="data-preparation" class="level3">
 <h3 class="anchored" data-anchor-id="data-preparation">Data preparation</h3>
-<p>Data preparation following the analysis plan.</p>
+<p>Three exclusion criteria will be applied. First, participants performing at or below chance (50% accuracy) were excluded. Second, participants who completed fewer than [X] trials per condition were removed from analyses (after we have the power analysis class, I’ll add more concrete info here). Third, for reaction time analyses, we excluded individual trials faster than 200 ms and removed participants whose average RT fell more than three standard deviations from their group mean.</p>
 </section>
 <section id="confirmatory-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="confirmatory-analysis">Confirmatory analysis</h3>
-<p>The analyses as specified in the analysis plan.</p>
+<p>Accuracy &amp; RT I plan to do separate mixed-design ANOVAs for accuracy and RT data, with Group (Autism, Control) as the between-subjects factor and Condition (Aligned, Misaligned) as the within-subjects factor. The composite face effect was operationalized as the difference in performance between aligned and misaligned conditions, with a reduced effect in aligned trials indicating holistic face processing. The critical test will be the Group × Condition interaction, which would indicate whether the composite face effect differs between autistic individuals and controls. I also plan to examine main effects of Group and Condition.</p>
+<p>SRS I plan to do independent samples t-tests to compare SRS total scores between groups and then compute Pearson correlations between SRS total scores and the composite face effect (accuracy in aligned-same and misaligned-same conditions) to test whether individual differences in autistic symptoms predict holistic face processing.</p>
 <p><em>Side-by-side graph with original graph is ideal here</em></p>
 </section>
 <section id="exploratory-analyses" class="level3">
 <h3 class="anchored" data-anchor-id="exploratory-analyses">Exploratory analyses</h3>
-<p>Any follow-up analyses desired (not required).</p>
+<p>Explonatory analyses (as of 11/05/25) (I wrote most of this code with the help of Claude so any suggestions/comments are greatly appreciated.) (See code on my github repo: yates2023/code/prelimanalysis.r)</p>
 </section>
 </section>
+<section id="load-libraries" class="level1">
+<h1>Load libraries</h1>
+<p>library(tidyverse)</p>
+</section>
+<section id="set-working-directory-to-where-your-csv-files-are" class="level1">
+<h1>Set working directory to where your CSV files are</h1>
+<p>setwd(“/Users/annapusok/Desktop/data/”)</p>
+</section>
+<section id="read-and-combine-all-csv-files" class="level1">
+<h1>Read and combine all CSV files</h1>
+<p>file_list &lt;- list.files(pattern = “*.csv”) all_data &lt;- map_df(file_list, read_csv)</p>
+</section>
+<section id="display-basic-info" class="level1">
+<h1>Display basic info</h1>
+<p>cat(“Total number of files:”, length(file_list), “”) cat(“Total number of rows:”, nrow(all_data), “”) cat(“Number of unique subjects:”, n_distinct(all_data$subject_id), “”)</p>
+</section>
+<section id="filter-main-task-trials-only-exclude-practice-and-other-non-trial-rows" class="level1">
+<h1>Filter main task trials only (exclude practice and other non-trial rows)</h1>
+<p>main_data &lt;- all_data %&gt;% filter(task == “main”, !is.na(correct), !is.na(response_time_ms))</p>
+</section>
+<section id="create-alignment-and-correct_response-variables" class="level1">
+<h1>Create alignment and correct_response variables</h1>
+<p>main_data &lt;- main_data %&gt;% mutate( alignment = case_when( condition %in% c(“diff_align”, “same_aligned”) ~ “aligned”, condition %in% c(“diff_misalign”, “same_misaligned”) ~ “misaligned” ), correct_response = case_when( condition %in% c(“diff_align”, “diff_misalign”) ~ “different”, condition %in% c(“same_aligned”, “same_misaligned”) ~ “same” ) )</p>
+<p>cat(“trials after filtering:”, nrow(main_data), “”)</p>
+</section>
+<section id="accuracy-analysis" class="level1">
+<h1>===== ACCURACY ANALYSIS =====</h1>
+<p>cat(“========== ACCURACY ANALYSIS ==========”)</p>
+</section>
+<section id="calculate-accuracy-by-subject-and-condition" class="level1">
+<h1>Calculate accuracy by subject and condition</h1>
+<p>accuracy_by_subject &lt;- main_data %&gt;% group_by(subject_id, alignment, correct_response) %&gt;% summarise( accuracy = mean(correct, na.rm = TRUE), n_trials = n(), .groups = “drop” )</p>
+</section>
+<section id="overall-means-and-ses" class="level1">
+<h1>Overall means and SEs</h1>
+<p>accuracy_means &lt;- accuracy_by_subject %&gt;% group_by(alignment, correct_response) %&gt;% summarise( mean_accuracy = mean(accuracy), se_accuracy = sd(accuracy) / sqrt(n()), n_subjects = n(), .groups = “drop” )</p>
+<p>print(accuracy_means)</p>
+</section>
+<section id="statistical-tests-for-accuracy" class="level1">
+<h1>Statistical tests for accuracy</h1>
+<p>cat(“— Accuracy: Different Trials —”) diff_accuracy &lt;- accuracy_by_subject %&gt;% filter(correct_response == “different”) %&gt;% pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)</p>
+<p>if(all(c(“aligned”, “misaligned”) %in% names(diff_accuracy))) { diff_acc_test &lt;- t.test(diff_accuracy<span class="math inline">\(aligned, diff_accuracy\)</span>misaligned, paired = TRUE) print(diff_acc_test) cat(“Effect size (Cohen’s d):”, (mean(diff_accuracy<span class="math inline">\(aligned) - mean(diff_accuracy\)</span>misaligned)) / sd(diff_accuracy<span class="math inline">\(aligned - diff_accuracy\)</span>misaligned), “”) }</p>
+<p>cat(“— Accuracy: Same Trials —”) same_accuracy &lt;- accuracy_by_subject %&gt;% filter(correct_response == “same”) %&gt;% pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)</p>
+<p>if(all(c(“aligned”, “misaligned”) %in% names(same_accuracy))) { same_acc_test &lt;- t.test(same_accuracy<span class="math inline">\(aligned, same_accuracy\)</span>misaligned, paired = TRUE) print(same_acc_test) cat(“Effect size (Cohen’s d):”, (mean(same_accuracy<span class="math inline">\(aligned) - mean(same_accuracy\)</span>misaligned)) / sd(same_accuracy<span class="math inline">\(aligned - same_accuracy\)</span>misaligned), “”) }</p>
+</section>
+<section id="accuracy-plot" class="level1">
+<h1>Accuracy plot</h1>
+<p>accuracy_plot &lt;- ggplot(accuracy_means, aes(x = alignment, y = mean_accuracy, fill = correct_response)) + geom_bar(stat = “identity”, position = position_dodge(0.9), width = 0.7) + geom_errorbar(aes(ymin = mean_accuracy - se_accuracy, ymax = mean_accuracy + se_accuracy), width = 0.2, position = position_dodge(0.9)) + scale_fill_manual(values = c(“different” = “#38b6ff”, “same” = “#ff914d”), labels = c(“Different”, “Same”)) + labs(title = “Accuracy by Alignment and Response Type”, y = “Accuracy (Proportion Correct)”, x = “Alignment Condition”, fill = “Trial Type”) + theme_minimal(base_size = 14) + theme(legend.position = “top”) + ylim(0, 1)</p>
+<p>print(accuracy_plot) ggsave(“accuracy_plot.png”, width = 8, height = 6)</p>
 <section id="discussion" class="level2">
 <h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
 <section id="summary-of-replication-attempt" class="level3">
@@ -224,6 +318,7 @@ ul.task-list li input[type="checkbox"] {
 <p>Add open-ended commentary (if any) reflecting (a) insights from follow-up exploratory analysis, (b) assessment of the meaning of the replication (or not) - e.g., for a failure to replicate, are the differences between original and present study ones that definitely, plausibly, or are unlikely to have been moderators of the result, and (c) discussion of any objections or challenges raised by the current and original authors about the replication attempt. None of these need to be long.</p>
 
 
+</section>
 </section>
 </section>
 
