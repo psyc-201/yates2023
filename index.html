@@ -55,13 +55,13 @@
             align-items: flex-start;
             gap: 5vw;
             margin: 30px 0;
-            height: 40vh;
+            height: 30vh;
         }
         
         .face-images img {
             width: 35vw;
             max-width: 500px;
-            height: 40vh;
+            height: 30vh;
             object-fit: contain;
             border-radius: 12px;
         }
@@ -290,12 +290,12 @@
             
         return `
             <div style="text-align: center;">
-                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">${progressText}</p>
+                <p style="color: #666; font-size: 20px; margin-top: 10px; ">${progressText}</p>
                 <div class="face-images">
                     <img src="${imageLeft}" alt="Face 1">
                     <img src="${imageRight}" alt="Face 2">
                 </div>
-                <h2 class="trial-question">Are the top parts of the faces, the yellow parts, the same or different?</h2>
+                <h2 class="trial-question">Are the top parts of the faces the same or different?</h2>
             </div>
         `;
     }
@@ -314,15 +314,15 @@
     const practiceTrials = [
         {
             images: [
-                practiceBaseUrl + 'test_stimuli/william_arnold.jpg',
-                practiceBaseUrl + 'test_stimuli/arnold_william.jpg'
+                practiceBaseUrl + 'test_stimuli/william_arnold1.jpg',
+                practiceBaseUrl + 'test_stimuli/arnold_william1.jpg'
             ],
             correctAnswer: 'different'
         },
         {
             images: [
-                practiceBaseUrl + 'test_stimuli/bridget_bridget.jpg',
-                practiceBaseUrl + 'test_stimuli/bridget_alexis.jpg'
+                practiceBaseUrl + 'test_stimuli/bridget_bridget1.jpg',
+                practiceBaseUrl + 'test_stimuli/bridget_alexis1.jpg'
             ],
             correctAnswer: 'same'
         }
@@ -357,6 +357,7 @@
                     on_finish: function(data) {
                         data.response_label = data.response === 0 ? 'same' : 'different';
                         data.correct = data.response_label === data.correct_answer;
+                        data.response_time_ms = data.rt;
                     }
                 },
                 {
@@ -528,6 +529,8 @@
                         on_finish: function(data) {
                             data.response_label = data.response === 0 ? 'same' : 'different';
                             data.correct = data.response_label === data.correct_answer;
+                            // Explicitly save RT
+                            data.response_time_ms = data.rt;
                         }
                     }
                 ]
@@ -568,7 +571,7 @@
         "I am much more uncomfortable in social situations than when I am by myself.",
         "My facial expressions send the wrong message to others about how I actually feel.",
         "I feel self-confident when interacting with others.",
-        "When under stress, he or she shows rigid or inflexible patterns of behaviors that seem odd.",
+        "When under stress, I engage in rigid or inflexible patterns of behaviors that seem odd to people.",
         "I do not recognize when others are trying to take advantage of me.",
         "I would rather be alone than with others.",
         "I am usually aware of how others are feeling.",
