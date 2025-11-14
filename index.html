@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Comparison Study</title>
+    <title>Composite Face Effect in Adults</title>
     
     <!-- jsPsych CSS -->
     <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
@@ -17,6 +17,7 @@
     <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
     <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe@0.3.0"></script>
     
     <style>
         .jspsych-btn {
@@ -205,59 +206,9 @@
                 
                 <p><strong>By participating in this research you are indicating that you are at least 18 years old, have read this consent form, and agree to participate in this research study. Please keep this consent form for your records.</strong></p>
             </div>
-            
-            <div class="consent-checkboxes">
-                <h3>Please confirm:</h3>
-                <label>
-                    <input type="checkbox" id="consent-age" required>
-                    I confirm that I am 18 years of age or older
-                </label>
-                <label>
-                    <input type="checkbox" id="consent-understand" required>
-                    I have read the consent form
-                </label>
-                <label>
-                    <input type="checkbox" id="consent-voluntary" required>
-                    I understand that participation is voluntary and I can withdraw at any time
-                </label>
-            </div>
         `,
         choices: ['I Consent to Participate in This Study'],
-        button_html: '<button class="jspsych-btn">%choice%</button>',
-        on_load: function() {
-            // Store references to checkboxes that we can access later
-            const ageBox = document.getElementById('consent-age');
-            const understandBox = document.getElementById('consent-understand');
-            const voluntaryBox = document.getElementById('consent-voluntary');
-            
-            // Store the state in a variable accessible to on_finish
-            this.consentState = {
-                age: false,
-                understand: false,
-                voluntary: false
-            };
-            
-            // Update state when checkboxes change
-            const self = this;
-            ageBox.addEventListener('change', function() {
-                self.consentState.age = this.checked;
-            });
-            understandBox.addEventListener('change', function() {
-                self.consentState.understand = this.checked;
-            });
-            voluntaryBox.addEventListener('change', function() {
-                self.consentState.voluntary = this.checked;
-            });
-        },
-        on_finish: function(data) {
-            // Use the stored state instead of trying to access DOM elements
-            const state = this.consentState || {age: false, understand: false, voluntary: false};
-            
-            data.consent_age = state.age;
-            data.consent_understand = state.understand;
-            data.consent_voluntary = state.voluntary;
-            data.consent_valid = state.age && state.understand && state.voluntary;
-        }
+        button_html: '<button class="jspsych-btn">%choice%</button>'
     };
     
     // Instructions
@@ -372,7 +323,7 @@
                         } else {
                             return `
                                 <h1 class="feedback-incorrect">Try again!</h1>
-                                <p style="font-size: 18px; margin-top: 20px;">The top parts of the faces are ${lastTrial.correct_answer}. Let's practice this one again.</p>
+                                <p style="font-size: 18px; margin-top: 20px;">Let's practice this one again.</p>
                             `;
                         }
                     },
@@ -405,6 +356,30 @@
     // Generate main trials
     function generateTrials() {
         const baseUrl = 'https://raw.githubusercontent.com/annapusok731/composite_face_effect_studies/main/CFE_Adult/';
+        
+        // Female face pairs (32 pairs)
+        const females = [
+            "cynthia_delia", "debbie_heather", "sadie_lucy", "brianne_meredith",
+            "bridget_brenda", "andie_lyla", "celeste_susanna", "rachel_ruby",
+            "emma_lili", "beth_zoe", "grace_hanna", "vanessa_sara",
+            "liv_rose", "tammy_daisy", "tess_mary", "mimi_kelly",
+            "dolly_laura", "shelby_dorothy", "isabel_nora", "lisa_paige",
+            "beck_pamela", "delilah_diana", "gabrielle_sydney", "penelope_margaret",
+            "elsa_sharon", "rory_gloria", "sandy_sierra", "astra_francesca",
+            "tina_alexis", "ella_lola", "ellen_velma", "everly_skylar"
+        ];
+        
+        // Male face pairs (32 pairs)
+        const males = [
+            "carter_liam", "mike_jason", "rick_alex", "james_ted",
+            "bob_andy", "steven_conrad", "tom_owen", "will_dan",
+            "cody_zack", "oliver_leo", "wane_john", "david_luca",
+            "carpenter_billy", "champ_gabriel", "cameron_wilson", "brian_brant",
+            "gable_hector", "cal_blake", "wendall_wesley", "cam_coop",
+            "fred_finn", "martin_hank", "harry_barney", "griffin_greg",
+            "chad_chase", "gavin_noah", "charles_walker", "gabe_caden",
+            "frank_gill", "otto_carson", "casper_christian", "gage_collin"
+        ];
         
         function shuffle(array) {
             const arr = [...array];
@@ -483,39 +458,33 @@
             return leftRightStim;
         }
         
-        const conditions = ["same", "same", "same", "same", "same", "same", 
-                          "diff_align", "diff_align", "diff_align", 
-                          "diff_misalign", "diff_misalign", "diff_misalign"];
-        const females = ["emma_lili", "beth_zoe", "grace_hanna", "vanessa_sara", 
-                       "liv_rose", "tammy_daisy", "tess_mary", "mimi_kelly", 
-                       "dolly_laura", "amber_jess", "isabel_nora", "lisa_paige"];
-        const males = ["carter_liam", "mike_jason", "rick_alex", "james_ted", 
-                     "bob_andy", "steven_conrad", "owen_tom", "will_dan", 
-                     "cody_zack", "leo_oliver", "wane_john", "david_luca"];
-        
-        const allFaces = females.concat(males);
-        let trials = [];
-        
-        // Generate trials 3 times
-        for (let rep = 0; rep < 3; rep++) {
-            const shuffledConditions = shuffle([...conditions]);
-            const allConditions = shuffledConditions.concat(shuffle([...conditions]));
-            const newTrials = getStimNames(allFaces, allConditions);
-            trials = trials.concat(newTrials);
+        // Create conditions: 32 same, 32 diff_align, 32 diff_misalign = 96 total
+        const conditions = [];
+        for (let i = 0; i < 32; i++) {
+            conditions.push("same");
+        }
+        for (let i = 0; i < 16; i++) {
+            conditions.push("diff_align");
+        }
+        for (let i = 0; i < 16; i++) {
+            conditions.push("diff_misalign");
         }
         
-        // Shuffle and take first 96 trials
-        trials = shuffle(trials).slice(0, 96);
+        const allFaces = females.concat(males);
+        const shuffledConditions = shuffle(conditions);
+        
+        let allTrials = getStimNames(allFaces, shuffledConditions);
+        allTrials = shuffle(allTrials);
         
         // Randomize left/right and add trial numbers
-        return trials.map((trial, index) => {
+        return allTrials.map((trial, index) => {
             const images = Math.random() < 0.5 ? trial.images : [trial.images[1], trial.images[0]];
             return {
                 timeline: [
                     createFixation(),
                     {
                         type: jsPsychHtmlButtonResponse,
-                        stimulus: createTrialStimulus(images[0], images[1], index + 1, 96, false),
+                        stimulus: createTrialStimulus(images[0], images[1], index + 1, allTrials.length, false),
                         choices: ['SAME', 'DIFFERENT'],
                         button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
                         data: {
@@ -529,7 +498,6 @@
                         on_finish: function(data) {
                             data.response_label = data.response === 0 ? 'same' : 'different';
                             data.correct = data.response_label === data.correct_answer;
-                            // Explicitly save RT
                             data.response_time_ms = data.rt;
                         }
                     }
