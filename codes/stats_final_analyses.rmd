@@ -1,0 +1,510 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-11-19"
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+
+# Set working directory to where your CSV files are
+setwd("/Users/annapusok/Desktop/pilot2_data/")
+
+# Read and combine all CSV files
+file_list <- list.files(pattern = "*.csv")
+
+all_data <- map_df(file_list, ~read_csv(.x, col_types = cols(
+  response_time_ms = col_double(),
+  .default = col_guess()
+)))
+
+# Display basic info
+cat("Total number of files:", length(file_list), "\n")
+cat("Total number of rows:", nrow(all_data), "\n")
+cat("Number of unique subjects:", n_distinct(all_data$subject_id), "\n")
+
+# Filter main task trials only (exclude practice and other non-trial rows)
+main_data <- all_data %>%
+  filter(task == "main", !is.na(correct), !is.na(response_time_ms))
+
+# Create alignment and correct_response variables
+main_data <- main_data %>%
+  mutate(
+    alignment = case_when(
+      condition %in% c("diff_align", "same_aligned") ~ "aligned",
+      condition %in% c("diff_misalign", "same_misaligned") ~ "misaligned"
+    ),
+    correct_response = case_when(
+      condition %in% c("diff_align", "diff_misalign") ~ "different",
+      condition %in% c("same_aligned", "same_misaligned") ~ "same"
+    ),
+    alignment = factor(alignment, levels = c("misaligned", "aligned"))
+  )
+
+cat("\nMain trials after filtering:", nrow(main_data), "\n")
+
+# Report trials with no response
+total_main_trials <- sum(all_data$task == "main", na.rm = TRUE)
+trials_with_response <- nrow(main_data)
+trials_no_response <- total_main_trials - trials_with_response
+
+cat("\nTrials excluded due to no response:", trials_no_response, 
+    "out of", total_main_trials, 
+    sprintf("(%.1f%%)", 100 * trials_no_response / total_main_trials), "\n")
+
+```
+
+
+
+```{r setup, include=FALSE}
+
+#ACCURACY ANALYSIS
+# Calculate accuracy by subject and condition
+accuracy_by_subject <- main_data %>%
+  group_by(subject_id, alignment, correct_response) %>%
+  summarise(
+    accuracy = mean(correct, na.rm = TRUE),
+    n_trials = n(),
+    .groups = "drop"
+  )
+
+# Overall means and SEs
+accuracy_means <- accuracy_by_subject %>%
+  group_by(alignment, correct_response) %>%
+  summarise(
+    mean_accuracy = mean(accuracy),
+    se_accuracy = sd(accuracy) / sqrt(n()),
+    n_subjects = n(),
+    .groups = "drop"
+  )
+print(accuracy_means)
+
+# Paired t-tests for accuracy (descriptive)
+cat("\n--- Accuracy: Different Trials ---\n")
+diff_accuracy <- accuracy_by_subject %>%
+  filter(correct_response == "different") %>%
+  pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)
+
+if(all(c("aligned", "misaligned") %in% names(diff_accuracy))) {
+  diff_acc_test <- t.test(diff_accuracy$aligned, diff_accuracy$misaligned, paired = TRUE)
+  print(diff_acc_test)
+  cat("Effect size (Cohen's d):", 
+      (mean(diff_accuracy$aligned) - mean(diff_accuracy$misaligned)) / 
+        sd(diff_accuracy$aligned - diff_accuracy$misaligned), "\n")
+}
+
+cat("\n--- Accuracy: Same Trials ---\n")
+same_accuracy <- accuracy_by_subject %>%
+  filter(correct_response == "same") %>%
+  pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)
+
+if(all(c("aligned", "misaligned") %in% names(same_accuracy))) {
+  same_acc_test <- t.test(same_accuracy$aligned, same_accuracy$misaligned, paired = TRUE)
+  print(same_acc_test)
+  cat("Effect size (Cohen's d):", 
+      (mean(same_accuracy$aligned) - mean(same_accuracy$misaligned)) / 
+        sd(same_accuracy$aligned - same_accuracy$misaligned), "\n")
+}
+
+# Mixed ANOVA for accuracy (Different trials)
+cat("\n--- Mixed ANOVA: Accuracy on Different Trials ---\n")
+diff_trials <- main_data %>% filter(correct_response == "different")
+accuracy_model_diff <- lmer(correct ~ alignment + (1|subject_id), 
+                            data = diff_trials)
+print(summary(accuracy_model_diff))
+print(anova(accuracy_model_diff))
+
+# Mixed ANOVA for accuracy (Same trials)
+cat("\n--- Mixed ANOVA: Accuracy on Same Trials ---\n")
+same_trials <- main_data %>% filter(correct_response == "same")
+accuracy_model_same <- lmer(correct ~ alignment + (1|subject_id), 
+                            data = same_trials)
+print(summary(accuracy_model_same))
+print(anova(accuracy_model_same))
+
+# Accuracy plot
+accuracy_plot <- ggplot(accuracy_means, 
+                        aes(x = alignment, y = mean_accuracy, fill = correct_response)) +
+  geom_bar(stat = "identity", position = position_dodge(0.9), width = 0.7) +
+  geom_errorbar(aes(ymin = mean_accuracy - se_accuracy, 
+                    ymax = mean_accuracy + se_accuracy),
+                width = 0.2, position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("different" = "#38b6ff", "same" = "#ff914d"),
+                    labels = c("Different", "Same")) +
+  labs(title = "Accuracy by Alignment and Response Type",
+       y = "Accuracy (Proportion Correct)", 
+       x = "Alignment Condition",
+       fill = "Trial Type") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top",
+        panel.grid.major.x = element_blank()) +
+  scale_x_discrete(labels = c("misaligned" = "Misaligned", "aligned" = "Aligned")) +
+  ylim(0, 1)
+
+print(accuracy_plot)
+ggsave("accuracy_plot.png", width = 8, height = 6, dpi = 300)
+
+```
+
+```{r}
+
+#REACTION TIME ANALYSIS
+
+# Filter for correct trials only
+correct_data <- main_data %>%
+  filter(correct == 1)
+
+# Calculate RT by subject and condition
+rt_by_subject <- correct_data %>%
+  group_by(subject_id, alignment, correct_response) %>%
+  summarise(
+    mean_rt = mean(response_time_ms, na.rm = TRUE),
+    n_trials = n(),
+    .groups = "drop"
+  )
+
+# Overall RT means and SEs
+rt_means <- rt_by_subject %>%
+  group_by(alignment, correct_response) %>%
+  summarise(
+    mean_rt = mean(mean_rt),
+    se_rt = sd(mean_rt) / sqrt(n()),
+    n_subjects = n(),
+    .groups = "drop"
+  )
+print(rt_means)
+
+# Bria's plot -- rt by each subject by condition
+ggplot(rt_by_subject, aes(x=alignment, y=mean_rt, col=correct_response)) +
+  geom_point() +
+  geom_line(aes(group=subject_id)) +
+  facet_wrap(~correct_response)
+ggsave("rt_by_subject.png", width=8, height=6, dpi=300)
+
+# Paired t-tests for RT (descriptive)
+cat("\n--- RT: Different Trials ---\n")
+diff_rt <- rt_by_subject %>%
+  filter(correct_response == "different") %>%
+  pivot_wider(names_from = alignment, values_from = mean_rt, id_cols = subject_id)
+
+diff_rt_pval <- NA
+if(all(c("aligned", "misaligned") %in% names(diff_rt))) {
+  diff_rt_test <- t.test(diff_rt$aligned, diff_rt$misaligned, paired = TRUE)
+  print(diff_rt_test)
+  diff_rt_pval <- diff_rt_test$p.value
+  cat("Effect size (Cohen's d):", 
+      (mean(diff_rt$aligned) - mean(diff_rt$misaligned)) / 
+        sd(diff_rt$aligned - diff_rt$misaligned), "\n")
+}
+
+cat("\n--- RT: Same Trials ---\n")
+same_rt <- rt_by_subject %>%
+  filter(correct_response == "same") %>%
+  pivot_wider(names_from = alignment, values_from = mean_rt, id_cols = subject_id)
+
+same_rt_pval <- NA
+if(all(c("aligned", "misaligned") %in% names(same_rt))) {
+  same_rt_test <- t.test(same_rt$aligned, same_rt$misaligned, paired = TRUE)
+  print(same_rt_test)
+  same_rt_pval <- same_rt_test$p.value
+  cat("Effect size (Cohen's d):", 
+      (mean(same_rt$aligned) - mean(same_rt$misaligned)) / 
+        sd(same_rt$aligned - same_rt$misaligned), "\n")
+}
+
+# Mixed ANOVA for RT (Different trials)
+cat("\n--- Mixed ANOVA: RT on Different Trials ---\n")
+diff_trials_correct <- correct_data %>% filter(correct_response == "different")
+rt_model_diff <- lmer(response_time_ms ~ alignment + (1|subject_id), 
+                      data = diff_trials_correct)
+print(summary(rt_model_diff))
+print(anova(rt_model_diff))
+
+# Mixed ANOVA for RT (Same trials)
+cat("\n--- Mixed ANOVA: RT on Same Trials ---\n")
+same_trials_correct <- correct_data %>% filter(correct_response == "same")
+rt_model_same <- lmer(response_time_ms ~ alignment + (1|subject_id), 
+                      data = same_trials_correct)
+print(summary(rt_model_same))
+print(anova(rt_model_same))
+
+# Function to format p-values as significance stars
+format_pval <- function(p) {
+  if(is.na(p)) return("")
+  if(p < 0.001) return("***")
+  if(p < 0.01) return("**")
+  if(p < 0.05) return("*")
+  return("ns")
+}
+
+# Create significance annotations
+sig_annotations <- data.frame(
+  correct_response = c("different", "same"),
+  label = c(format_pval(diff_rt_pval), format_pval(same_rt_pval)),
+  x = c(1.5, 1.5),  # Position between aligned and misaligned
+  y = c(
+    max(rt_means$mean_rt[rt_means$correct_response == "different"] + 
+          rt_means$se_rt[rt_means$correct_response == "different"]) * 1.1,
+    max(rt_means$mean_rt[rt_means$correct_response == "same"] + 
+          rt_means$se_rt[rt_means$correct_response == "same"]) * 1.1
+  )
+)
+
+```
+
+```{r}
+# RT plot with significance indicators
+rt_plot <- ggplot(rt_means, 
+                  aes(x = alignment, y = mean_rt, fill = correct_response)) +
+  geom_bar(stat = "identity", position = position_dodge(0.9), width = 0.7) +
+  geom_errorbar(aes(ymin = mean_rt - se_rt, 
+                    ymax = mean_rt + se_rt),
+                width = 0.2, position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("different" = "#38b6ff", "same" = "#ff914d"),
+                    labels = c("Different", "Same")) +
+  labs(title = "Reaction Time by Alignment and Response Type",
+       y = "Reaction Time (ms)", 
+       x = "Alignment Condition",
+       fill = "Trial Type",
+       caption = "*** p < 0.001, ** p < 0.01, * p < 0.05, ns = not significant") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top",
+        panel.grid.major.x = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 10)) +
+  scale_x_discrete(labels = c("misaligned" = "Misaligned", "aligned" = "Aligned")) +
+  # Add significance brackets and labels
+  geom_segment(data = sig_annotations,
+               aes(x = 1, xend = 2, y = y, yend = y),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_segment(data = sig_annotations,
+               aes(x = 1, xend = 1, y = y * 0.98, yend = y),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_segment(data = sig_annotations,
+               aes(x = 2, xend = 2, y = y * 0.98, yend = y),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_text(data = sig_annotations,
+            aes(x = x, y = y * 1.02, label = label),
+            inherit.aes = FALSE, size = 5, fontface = "bold") +
+  facet_wrap(~ correct_response, labeller = labeller(correct_response = c("different" = "Different Trials", "same" = "Same Trials")))
+
+print(rt_plot)
+ggsave("rt_plot.png", width = 10, height = 6, dpi = 300)
+
+```
+
+```{r}
+# ===== EXPORT SUMMARY DATA =====
+write_csv(accuracy_means, "accuracy_summary.csv")
+write_csv(rt_means, "rt_summary.csv")
+write_csv(accuracy_by_subject, "accuracy_by_subject.csv")
+write_csv(rt_by_subject, "rt_by_subject.csv")
+```
+
+
+```{r}
+#Exploratory analyses with SRS
+
+# Load required libraries
+library(tidyverse)
+
+# Set working directory to where your CSV files are
+setwd("/Users/annapusok/Desktop/pilot2_data/")
+
+# Read and combine all CSV files
+file_list <- list.files(pattern = "*.csv")
+
+# Combine all CSV files with consistent column types
+data_raw <- file_list %>%
+  map_df(~read.csv(., colClasses = c(
+    response_time_ms = "character",
+    rt = "character",
+    correct = "character",
+    srs_total_score = "character"
+  )))
+
+cat(sprintf("Total rows loaded: %d\n", nrow(data_raw)))
+cat(sprintf("Total files loaded: %d\n", length(file_list)))
+
+# Clean the data
+data_clean <- data_raw %>%
+  filter(task == "main") %>%
+  mutate(
+    correct = as.numeric(correct),
+    rt = as.numeric(response_time_ms),
+    
+    alignment = case_when(
+      condition %in% c("same_aligned", "diff_align") ~ "aligned",
+      condition %in% c("same_misaligned", "diff_misalign") ~ "misaligned"
+    ),
+    
+    correct_response = case_when(
+      condition %in% c("same_aligned", "same_misaligned") ~ "same",
+      condition %in% c("diff_align", "diff_misalign") ~ "different"
+    ),
+    
+    srs_total_score = as.numeric(srs_total_score)
+  ) %>%
+  filter(!is.na(srs_total_score))
+
+cat(sprintf("Total trials after cleaning: %d\n", nrow(data_clean)))
+cat(sprintf("Number of participants: %d\n", length(unique(data_clean$subject_id))))
+
+```
+
+
+```{r}
+# Calculate per-participant metrics
+participant_metrics <- data_clean %>%
+  group_by(subject_id) %>%
+  summarise(
+    overall_accuracy = mean(correct, na.rm = TRUE),
+    overall_rt = mean(rt, na.rm = TRUE),
+    srs_score = first(srs_total_score),
+    aligned_same_acc = mean(correct[alignment == "aligned" & correct_response == "same"], na.rm = TRUE),
+    misaligned_same_acc = mean(correct[alignment == "misaligned" & correct_response == "same"], na.rm = TRUE),
+    cfe_accuracy = aligned_same_acc - misaligned_same_acc,
+    aligned_same_rt = mean(rt[alignment == "aligned" & correct_response == "same"], na.rm = TRUE),
+    misaligned_same_rt = mean(rt[alignment == "misaligned" & correct_response == "same"], na.rm = TRUE),
+    cfe_rt = aligned_same_rt - misaligned_same_rt
+  ) %>%
+  ungroup()
+
+cat("\n=== Individual Differences Analysis ===\n")
+cat(sprintf("Number of participants with SRS data: %d\n", nrow(participant_metrics)))
+cat(sprintf("SRS Score Range: %.2f - %.2f (M = %.2f, SD = %.2f)\n", 
+            min(participant_metrics$srs_score, na.rm = TRUE),
+            max(participant_metrics$srs_score, na.rm = TRUE),
+            mean(participant_metrics$srs_score, na.rm = TRUE),
+            sd(participant_metrics$srs_score, na.rm = TRUE)))
+```
+
+
+```{r}
+
+#Correlations
+cor_srs_accuracy <- cor.test(participant_metrics$srs_score, 
+                              participant_metrics$overall_accuracy,
+                              method = "pearson")
+
+cat("\n--- SRS Score and Overall Accuracy ---\n")
+cat(sprintf("Pearson's r = %.3f, p = %.4f\n", 
+            cor_srs_accuracy$estimate, cor_srs_accuracy$p.value))
+cat(sprintf("95%% CI: [%.3f, %.3f]\n", 
+            cor_srs_accuracy$conf.int[1], cor_srs_accuracy$conf.int[2]))
+
+cor_srs_rt <- cor.test(participant_metrics$srs_score, 
+                       participant_metrics$overall_rt,
+                       method = "pearson")
+
+cat("\n--- SRS Score and Overall Reaction Time ---\n")
+cat(sprintf("Pearson's r = %.3f, p = %.4f\n", 
+            cor_srs_rt$estimate, cor_srs_rt$p.value))
+cat(sprintf("95%% CI: [%.3f, %.3f]\n", 
+            cor_srs_rt$conf.int[1], cor_srs_rt$conf.int[2]))
+
+cor_srs_cfe_acc <- cor.test(participant_metrics$srs_score, 
+                             participant_metrics$cfe_accuracy,
+                             method = "pearson")
+
+cat("\n--- SRS Score and Composite Face Effect (Accuracy) ---\n")
+cat(sprintf("CFE Accuracy Range: %.3f - %.3f (M = %.3f, SD = %.3f)\n",
+            min(participant_metrics$cfe_accuracy, na.rm = TRUE),
+            max(participant_metrics$cfe_accuracy, na.rm = TRUE),
+            mean(participant_metrics$cfe_accuracy, na.rm = TRUE),
+            sd(participant_metrics$cfe_accuracy, na.rm = TRUE)))
+cat(sprintf("Pearson's r = %.3f, p = %.4f\n", 
+            cor_srs_cfe_acc$estimate, cor_srs_cfe_acc$p.value))
+cat(sprintf("95%% CI: [%.3f, %.3f]\n", 
+            cor_srs_cfe_acc$conf.int[1], cor_srs_cfe_acc$conf.int[2]))
+
+cor_srs_cfe_rt <- cor.test(participant_metrics$srs_score, 
+                            participant_metrics$cfe_rt,
+                            method = "pearson")
+
+cat("\n--- SRS Score and Composite Face Effect (RT) ---\n")
+cat(sprintf("CFE RT Range: %.2f - %.2f ms (M = %.2f, SD = %.2f)\n",
+            min(participant_metrics$cfe_rt, na.rm = TRUE),
+            max(participant_metrics$cfe_rt, na.rm = TRUE),
+            mean(participant_metrics$cfe_rt, na.rm = TRUE),
+            sd(participant_metrics$cfe_rt, na.rm = TRUE)))
+cat(sprintf("Pearson's r = %.3f, p = %.4f\n", 
+            cor_srs_cfe_rt$estimate, cor_srs_cfe_rt$p.value))
+cat(sprintf("95%% CI: [%.3f, %.3f]\n", 
+            cor_srs_cfe_rt$conf.int[1], cor_srs_cfe_rt$conf.int[2]))
+
+```
+
+
+```{r}
+#Graphs for exploratory analyses
+# Plot 1: SRS vs Overall Accuracy
+p1 <- ggplot(participant_metrics, aes(x = srs_score, y = overall_accuracy)) +
+  geom_point(alpha = 0.6, size = 3, color = "#38b6ff") +
+  geom_smooth(method = "lm", color = "#ff914d", se = TRUE) +
+  labs(title = "SRS Score vs Overall Accuracy",
+       x = "SRS Total Score",
+       y = "Overall Accuracy",
+       caption = sprintf("r = %.3f, p = %.4f", 
+                        cor_srs_accuracy$estimate, 
+                        cor_srs_accuracy$p.value)) +
+  theme_minimal(base_size = 14) +
+  theme(plot.caption = element_text(hjust = 0.5, size = 12))
+
+print(p1)
+ggsave("srs_overall_accuracy.png", p1, width = 8, height = 6, dpi = 300)
+
+# Plot 2: SRS vs Overall RT
+p2 <- ggplot(participant_metrics, aes(x = srs_score, y = overall_rt)) +
+  geom_point(alpha = 0.6, size = 3, color = "#38b6ff") +
+  geom_smooth(method = "lm", color = "#ff914d", se = TRUE) +
+  labs(title = "SRS Score vs Overall Reaction Time",
+       x = "SRS Total Score",
+       y = "Overall Reaction Time (ms)",
+       caption = sprintf("r = %.3f, p = %.4f", 
+                        cor_srs_rt$estimate, 
+                        cor_srs_rt$p.value)) +
+  theme_minimal(base_size = 14) +
+  theme(plot.caption = element_text(hjust = 0.5, size = 12))
+
+print(p2)
+ggsave("srs_overall_rt.png", p2, width = 8, height = 6, dpi = 300)
+
+# Plot 3: SRS vs CFE Accuracy
+p3 <- ggplot(participant_metrics, aes(x = srs_score, y = cfe_accuracy)) +
+  geom_point(alpha = 0.6, size = 3, color = "#38b6ff") +
+  geom_smooth(method = "lm", color = "#ff914d", se = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  labs(title = "SRS Score vs Composite Face Effect (Accuracy)",
+       x = "SRS Total Score",
+       y = "CFE Magnitude (Aligned - Misaligned)",
+       caption = sprintf("r = %.3f, p = %.4f", 
+                        cor_srs_cfe_acc$estimate, 
+                        cor_srs_cfe_acc$p.value)) +
+  theme_minimal(base_size = 14) +
+  theme(plot.caption = element_text(hjust = 0.5, size = 12))
+
+print(p3)
+ggsave("srs_cfe_accuracy.png", p3, width = 8, height = 6, dpi = 300)
+
+# Plot 4: SRS vs CFE RT
+p4 <- ggplot(participant_metrics, aes(x = srs_score, y = cfe_rt)) +
+  geom_point(alpha = 0.6, size = 3, color = "#38b6ff") +
+  geom_smooth(method = "lm", color = "#ff914d", se = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  labs(title = "SRS Score vs Composite Face Effect (RT)",
+       x = "SRS Total Score",
+       y = "CFE Magnitude (ms, Aligned - Misaligned)",
+       caption = sprintf("r = %.3f, p = %.4f", 
+                        cor_srs_cfe_rt$estimate, 
+                        cor_srs_cfe_rt$p.value)) +
+  theme_minimal(base_size = 14) +
+  theme(plot.caption = element_text(hjust = 0.5, size = 12))
+
+print(p4)
+ggsave("srs_cfe_rt.png", p4, width = 8, height = 6, dpi = 300)
+```
+
+
