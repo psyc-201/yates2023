@@ -15,11 +15,11 @@ format:
 
 Autism spectrum disorder (ASD) is characterized by difficulties in social communication, repetitive behaviors and restricted interests. A fundamental aspect of social communication is face perception, which has been extensively studied in ASD research. The composite face effect (CFE; Young et al., 1987) is a measure of holistic face processing, and typically developing children show evidence of the CFE as early as four years of age. In contrast, individuals with ASD often exhibit atypical face processing, thought to stem from reduced holistic perception and employing more feature-based strategies. However, holistic face processing is cruical for social communication processes, such as emotion recognition. Although several studies have examined the CFE in adolescents and adults with ASD, findings have been inconsistent. To date, however, no research has investigated the CFE in young children with ASD. My first year project aims to fill this gap by testing holistic face processing in young children with ASD. As a first step, for my statistics project, I want to pilot the task with neurotypical adults to validate the paradigm and ensure the procedure is feasible before extending it to child populations. Yates & Lewkowicz tested the CFE paradigm in children ages 4-6, with findings that kids as young as 4 exhibit holistic face processing, so I am planning to replicate their study.
 
-For the stimuli, I plan to use a Caucasian hairless faces (male and female) with neutral expressions, from the Chicago Face Database. The face images will be grayscale displayed on a white screen, and the top parts of the faces will be highlighted, consistent with prior (Yates & Lewkowicz, 2023). Yates & Lewkowicz presented 36 trials, for the adult sample, I plan to do more based on power analysis. //I will meet with Jane to discuss what is the best number of trials for the experiment based on power analysis. I do plan to use different analysis methods once I collect both neurotypical and ASD data given that Yates & Lewkowicz only had neurotypical kid data only and for the class, I'm only collecting neurotypical adult data.
+For the stimuli, I plan to use a Caucasian hairless faces (male and female) with neutral expressions, from the Chicago Face Database. The face images will be grayscale displayed on a white screen, and the top parts of the faces will be highlighted, consistent with prior (Yates & Lewkowicz, 2023). Yates & Lewkowicz presented 36 trials for children ages 4-6 in the original study, I plan to do more based on power analysis. //I will meet with Jane to discuss what is the best number of trials for the experiment based on power analysis. I do plan to use different analysis methods once I collect both neurotypical and ASD data given that Yates & Lewkowicz only had neurotypical kid data only and for the class, I'm only collecting neurotypical adult data.
 
 The procedure will include two practice trials, the first one being spatially aligned composite faces where the top halves are of different faces, the other being spatially misaligned with same top halves. Participants will receive feedback during the practice trials, and the experiment only advances forward when participants select the correct choice. The test phase will consist of 2 blocks of 36 test trials with a short break between the blocks.
 
-About 24 neurotypical adult participants will be recruited for the final project. This sample size was according to Hsiung & Chien (2024.) They conducted a power analysis and determined that 24 neurotypical and ASD adults are a good number. I uploaded that paper to my original_paper folder.
+About 30 adult participants will be recruited for the final project. This sample size was according to Hsiung & Chien (2024.) They conducted a power analysis and determined that 24 neurotypical and ASD adults are a good number. I uploaded that paper to my original_paper folder.
 
 The main challenge will be ensuring that participants remain attentive through the trials. For that, I’ll be including an exclusion criteria that if participants said all “same” or all “different” responses, which would be an indicator of not paying attention. Participants who also fail to finish the experiment will also be excluded.
 
@@ -31,13 +31,12 @@ Repository: https://github.com/annapusok731/yates2023.git
 
 ### Power Analysis
 
-I calculated with power for Yates and Lewkowicz (2023) with G-Power. They had power of 1.0 with the effect size of 0.743 and n=128.
 Based on these analyses, I need an n of 17 to have an actual power of 0.82 (however, I'm hoping to do additional analyses with an additional group {ASD group}, so I did additoonal power analyses bvased on a paper that has done similar task with two groups and got that, I'd need 24 participants in each group.)
 
 ### Planned Sample
 
-About 24 neurotypical adult (# female gender, # other gender) participants (M age = X years, SD = Y, range = X-Y) will be recruited for the final project. This sample size was according to Hsiung & Chien (2024). "This sample size was calculated according to Rosner et al. (2005) and was determined based on power consideration (i.e., we set the type 1 error (α) to 0.05, the power (1-β) at approximately 0.84, leading to an expected sample size of 24)." 
-Exclusion criteria(s): Participants will also be excluded from analyses if they respond at chance level (50% correct). Responses faster than 200 ms and average response time exceeding ±2 standard deviations from each participant's mean will also be excluded.
+About 30 adults (# female gender, # other gender) participants (M age = X years, SD = Y, range = X-Y) will be recruited for the final project. This sample size was according to Hsiung & Chien (2024). "This sample size was calculated according to Rosner et al. (2005) and was determined based on power consideration (i.e., we set the type 1 error (α) to 0.05, the power (1-β) at approximately 0.84, leading to an expected sample size of 24)." 
+Participants will be excluded from analyses if they respond at or below chance level (50% correct). The aimed final sample size is 24 adults
 
 ### Materials
 Composite face stimuli will be created using Canva from the Chicago Face Database at (https://www.chicagofaces.org/). Faces will be grayscale images of White males and females with a neutral expression looking directly into the camera. 48 pairs of composite face stimuli (24 male and 24 female pairs) were presented to each participant. "Given that misalignment of inner face features can reduce the composite face effect (Curby & Entenman, 2016; but see Kurbel et al., 2021, for robust results regardless of perceptual fit), we ensured as much as possible that each individual face was paired with a same-gender face of similar size/shape and skin tone. In addition, as recommended for the composite face task (Rossion & Retter, 2015), we included a small gap between the top and bottom halves of each composite face."
@@ -49,11 +48,11 @@ Composite face stimuli will be created using Canva from the Chicago Face Databas
 After gaining approval from the Institutional Review Board, participants were recruited through Sona and received course credit for participation. After enrolling through their Sona accounts, participants completed the experiment online.
 
 "The first part of the experiment consisted of two practice trials. During the first of these trials, participants saw a pair of spatially aligned composite faces where the top halves were of different faces. One composite face was presented on one side of the screen, and the other composite face was presented on the other side of the screen."
-Adults are asked to decide whether the yellow parts of the faces (i.e., the tops) of these composite faces were the same or different. Participants will receive feedback during the practice trials. Thus an incorrect response will prompt them to "Try Again." A correct response will confirm their accuracy: "Great job! The yellow parts of the face are the same." During the second practice trial, participants will see a pair of spatially misaligned composite faces where the top halves were of the same face and were once again asked whether the yellow parts” of these faces were the same or different. Again, if participants made an incorrect choice, they will be prompted to try again, and they got positive response for the correct choice.
+Adults are asked to decide whether the top parts of the faces (i.e., the tops) of these composite faces were the same or different. Participants will receive feedback during the practice trials. Thus an incorrect response will prompt them to "Try Again." A correct response will confirm their accuracy: "Great job! The top parts of the face are the same." During the second practice trial, participants will see a pair of spatially misaligned composite faces where the top halves were of the same face and were once again asked whether the top parts” of these faces were the same or different. Again, if participants made an incorrect choice, they will be prompted to try again, and they got positive response for the correct choice.
 
 After the practice trials are completed, adults were given 72 test trials during which "we presented four different types of stimulus pairs. These pairs were (a) aligned–same, where the top halves of the two composite faces depicted the same identity (e.g., AA and AB) and where the top and bottom halves were horizontally aligned, (b) aligned–different, where the top halves of two composite faces depicted different identities (e.g., BA and AB) and where the top and bottom halves were horizontally aligned, (c) misaligned–same, where the top halves of two composite faces depicted the same identity but were horizontally offset, and (d) misaligned–different, where the top halves of two composite faces depicted different identities but were horizontally offset (Fig. 1A, right). Fig. 1B shows an example of the types of stimuli and response buttons presented during an aligned–same trial."
 
-"During each trial, participants were prompted to respond whether the faces were the same or different by clicking on one of two buttons visible on the screen corresponding to these choices (see Fig. 1B). Participants were also reminded after 10, 20, and 30 trials that they were supposed to answer whether the "yellow parts” of the face were the same or different. A click of one of the two response buttons was required to advance the experiment to the next trial. Participants had unlimited time to respond."
+"During each trial, participants were prompted to respond whether the faces were the same or different by clicking on one of two buttons visible on the screen corresponding to these choices (see Fig. 1B). Participants were also reminded after 10, 20, and 30 trials that they were supposed to answer whether the "top parts” of the face were the same or different. A click of one of the two response buttons was required to advance the experiment to the next trial. Participants had unlimited time to respond."
 
 Once participants complete the experiment, they will be asked to complete a demographic survey indicating their age, race and ethnicity, highest level of education completed, current employment status and their location defined as "urban," "suburban" or "rural." Participants were also asked to complete the Social Responsiveness Scale (SRS-2 Adult) about their social abilities.
 
@@ -64,7 +63,8 @@ The data of primary interest were the accuracy scores obtained in the same trial
 
 ### Differences from Original Study
 
-My study diverged from Yates and Lewkowicz in a few methodological aspects. Although both studies used the Chicago Face Database, I doubled the stimulus presentation (given that my sample size included adults instead of children), showing participants 48 unique composite face pairs (evenly split between male and female faces) rather than 24. I also modified the attentional cue by replacing the original purple-pink tint applied to top face halves with a yellow tint for enhanced visibility. Additionally, I extended the dependent measures beyond the original study by recording reaction times, establishing RT-based exclusion criteria, and performing supplementary RT related analyses. Finally, I added a demographic questionnaire and the Social Responsiveness Scale (SRS-2 Adult) to assess participants social abilities.
+My study diverged from Yates and Lewkowicz in a few methodological aspects. The original study had 36 trials, my experiment will have 96. This still fits adult's attention span. Additionally, children in the original study had no time limit on viewing the stimulus and to respond. Here, we only showed each face pair to participants for 1 second, and ste the response limit to 3 seconds. Given the increase in the number of trials, I also made more face stimuli. The original study showed kids 24 unique face pairs, the current study showed participants 64 unique face pairs to ensure participants' see unique face stimuli for most of the trials. The original study also added a putple tint to the top halves of the faces to direct children's attention -- here, we used black and white stimuli. Additionally, I extended the dependent measures beyond the original study by recording reaction times and performing supplementary RT related analyses. I added a demographic questionnaire and the Social Responsiveness Scale (SRS-2 Adult) to assess participants social abilities, and am not using the Covid-19 mask related questionnaire the authors included originally, to measure the relationship between mask exposure and face processing.
+Finally, when it comes to analyses, the original study analyzed accuracy scores by different age groups (separately the 4, 5 and 6 year olds' data). In this study, I will nto include age in my ANOVA, given that all participants will be above 18, and i am not looking at the developmental trajectory of face processing.
 
 ### Methods Addendum (Post Data Collection)
 
@@ -99,123 +99,21 @@ Three exclusion criteria will be applied. First, participants performing at or b
 ### Confirmatory analysis
 
 Accuracy & RT
-I plan to do separate mixed-design ANOVAs for accuracy and RT data, with Group (Autism, Control) as the between-subjects factor and Condition (Aligned, Misaligned) as the within-subjects factor. The composite face effect was operationalized as the difference in performance between aligned and misaligned conditions, with a reduced effect in aligned trials indicating holistic face processing.
-The critical test will be the Group × Condition interaction, which would indicate whether the composite face effect differs between autistic individuals and controls. I also plan to examine main effects of Group and Condition. 
+For accuracy data, we will conduct a mixed repeated-measures ANOVA with alignment as a within-participant factor and gender as a between-participant factor, with participant included as a random effect. This analysis will allow us to test for main effects of alignment and gender, as well as their interaction. For reaction time data, we will conduct a parallel mixed repeated-measures ANOVA with the same factors to examine whether alignment affects processing speed. If we observe significant effects of gender on either accuracy or reaction time, we will follow up with pairwise comparisons across gender groups. These comparisons will be conducted using two-tailed t-tests with Bonferroni correction to control for multiple comparisons. These planned analyses will allow us to determine whether holistic face processing, as indexed by both accuracy and response speed, differs by gender and whether such differences are specific to alignment effects or reflect broader group differences in face processing.
+
 
 SRS
-I plan to do independent samples t-tests to compare SRS total scores between groups and then compute Pearson correlations between SRS total scores and the composite face effect (accuracy in aligned-same and misaligned-same conditions) to test whether individual differences in autistic symptoms predict holistic face processing.
+For both accuracy and reaction time data, we will explore potential relationships between social responsiveness and holistic face processing. First, we will examine whether SRS total scores correlate with overall task performance by conducting Pearson correlations between SRS scores and (a) average accuracy across all trials and (b) average reaction time across all trials. More critically, to test whether individual differences in social responsiveness relate specifically to holistic processing, we will examine correlations between SRS scores and the composite face effect magnitude, calculated as the difference in accuracy (and reaction time) between aligned-same and misaligned-same trials.  
 
 *Side-by-side graph with original graph is ideal here*
 
 ### Exploratory analyses
 
-Explonatory analyses (as of 11/05/25) (I wrote most of this code with the help of Claude so any suggestions/comments are greatly appreciated.) (See code on my github repo: yates2023/code/prelimanalysis.r)
+The SRS related analyses I described above will be exploratory analyses.
 
-# Load libraries
-library(tidyverse)
+### Analyses
 
-# Set working directory to where your CSV files are
-setwd("/Users/annapusok/Desktop/data/")
-
-# Read and combine all CSV files
-file_list <- list.files(pattern = "*.csv")
-all_data <- map_df(file_list, read_csv)
-
-# Display basic info
-cat("Total number of files:", length(file_list), "\n")
-cat("Total number of rows:", nrow(all_data), "\n")
-cat("Number of unique subjects:", n_distinct(all_data$subject_id), "\n")
-
-# Filter main task trials only (exclude practice and other non-trial rows)
-main_data <- all_data %>%
-  filter(task == "main", !is.na(correct), !is.na(response_time_ms))
-
-# Create alignment and correct_response variables
-main_data <- main_data %>%
-  mutate(
-    alignment = case_when(
-      condition %in% c("diff_align", "same_aligned") ~ "aligned",
-      condition %in% c("diff_misalign", "same_misaligned") ~ "misaligned"
-    ),
-    correct_response = case_when(
-      condition %in% c("diff_align", "diff_misalign") ~ "different",
-      condition %in% c("same_aligned", "same_misaligned") ~ "same"
-    )
-  )
-
-cat("\nMain trials after filtering:", nrow(main_data), "\n")
-
-# ===== ACCURACY ANALYSIS =====
-cat("\n========== ACCURACY ANALYSIS ==========\n")
-
-# Calculate accuracy by subject and condition
-accuracy_by_subject <- main_data %>%
-  group_by(subject_id, alignment, correct_response) %>%
-  summarise(
-    accuracy = mean(correct, na.rm = TRUE),
-    n_trials = n(),
-    .groups = "drop"
-  )
-
-# Overall means and SEs
-accuracy_means <- accuracy_by_subject %>%
-  group_by(alignment, correct_response) %>%
-  summarise(
-    mean_accuracy = mean(accuracy),
-    se_accuracy = sd(accuracy) / sqrt(n()),
-    n_subjects = n(),
-    .groups = "drop"
-  )
-
-print(accuracy_means)
-
-# Statistical tests for accuracy
-cat("\n--- Accuracy: Different Trials ---\n")
-diff_accuracy <- accuracy_by_subject %>%
-  filter(correct_response == "different") %>%
-  pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)
-
-if(all(c("aligned", "misaligned") %in% names(diff_accuracy))) {
-  diff_acc_test <- t.test(diff_accuracy$aligned, diff_accuracy$misaligned, paired = TRUE)
-  print(diff_acc_test)
-  cat("Effect size (Cohen's d):", 
-      (mean(diff_accuracy$aligned) - mean(diff_accuracy$misaligned)) / 
-        sd(diff_accuracy$aligned - diff_accuracy$misaligned), "\n")
-}
-
-cat("\n--- Accuracy: Same Trials ---\n")
-same_accuracy <- accuracy_by_subject %>%
-  filter(correct_response == "same") %>%
-  pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)
-
-if(all(c("aligned", "misaligned") %in% names(same_accuracy))) {
-  same_acc_test <- t.test(same_accuracy$aligned, same_accuracy$misaligned, paired = TRUE)
-  print(same_acc_test)
-  cat("Effect size (Cohen's d):", 
-      (mean(same_accuracy$aligned) - mean(same_accuracy$misaligned)) / 
-        sd(same_accuracy$aligned - same_accuracy$misaligned), "\n")
-}
-
-# Accuracy plot
-accuracy_plot <- ggplot(accuracy_means, 
-                        aes(x = alignment, y = mean_accuracy, fill = correct_response)) +
-  geom_bar(stat = "identity", position = position_dodge(0.9), width = 0.7) +
-  geom_errorbar(aes(ymin = mean_accuracy - se_accuracy, 
-                    ymax = mean_accuracy + se_accuracy),
-                width = 0.2, position = position_dodge(0.9)) +
-  scale_fill_manual(values = c("different" = "#38b6ff", "same" = "#ff914d"),
-                    labels = c("Different", "Same")) +
-  labs(title = "Accuracy by Alignment and Response Type",
-       y = "Accuracy (Proportion Correct)", 
-       x = "Alignment Condition",
-       fill = "Trial Type") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "top") +
-  ylim(0, 1)
-
-print(accuracy_plot)
-ggsave("accuracy_plot.png", width = 8, height = 6)
-
+See stats_finak_analyses.qmd on yates2023 repo!
 
 
 ## Discussion
