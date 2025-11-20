@@ -211,20 +211,55 @@
         button_html: '<button class="jspsych-btn">%choice%</button>'
     };
     
+    
+    // Timeslot question
+    const timeslot = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: `
+            <h1>Timeslot Information</h1>
+            <div class="demographics-form">
+                <div class="form-group">
+                    <label for="timeslot">What is the date/time you signed up for? We will need this information to verify your session and issue your credit within 3 days of participation.</label>
+                    <input type="text" id="timeslot" name="timeslot" placeholder="e.g., Monday 11/18 at 2:00 PM" required>
+                </div>
+            </div>
+        `,
+        choices: ['Continue'],
+        button_html: '<button class="jspsych-btn" id="timeslot-submit">%choice%</button>',
+        on_load: function() {
+            const timeslotInput = document.getElementById('timeslot');
+            this.timeslotData = { timeslot: '' };
+            
+            const self = this;
+            timeslotInput.addEventListener('input', function() {
+                self.timeslotData.timeslot = this.value;
+            });
+        },
+        on_finish: function(data) {
+            const stored = this.timeslotData || {};
+            data.timeslot = stored.timeslot;
+            // Add timeslot to all subsequent data
+            jsPsych.data.addProperties({
+                timeslot: stored.timeslot
+            });
+        }
+    };
+
     // Instructions
     const instructions = {
         type: jsPsychHtmlButtonResponse,
         stimulus: `
             <h1>Instructions</h1>
-            <p>In this task, you will see two pictures of faces side-by-side.</p>
+            <p>In this task, you will see two pictures of faces side-by-side. They will be visible for a short amount of time.</p>
             <p>You will have to decide whether the top parts of the faces are the same or different.</p>
             <p>To answer, click on either the "SAME" or "DIFFERENT" buttons below the images.</p>
             <p>Try to answer as quickly as you can.</p>
-            <p>There will be practice trials. Once you click on "Next" after the second practice, the experiment will automatically start.</p>
+            <p>There will be two practice trials. Once you click on "Next" after the second practice, the experiment will automatically start.</p>
             <p>After the experiment, we ask you to fill out two surveys.</p>
         `,
         choices: ["Let's Practice!"],
-        button_html: '<button class="jspsych-btn">%choice%</button>'
+        button_html: '<button class="jspsych-btn">%choice%</button>',
+        enable_button_after: 6000 
     };
     
     // Enter fullscreen
@@ -282,24 +317,34 @@
     // Create practice trial procedures
     const practiceProcedures = [];
     
-    practiceTrials.forEach((trial, index) => {
-        // Create a practice loop that repeats until correct
+        practiceTrials.forEach((trial, index) => {
         const practiceLoop = {
             timeline: [
                 createFixation(),
+                // Stage 1: Show images for 500ms
                 {
                     type: jsPsychHtmlButtonResponse,
                     stimulus: function() {
-                        // Randomize left/right on each attempt
                         const images = Math.random() < 0.5 ? trial.images : [trial.images[1], trial.images[0]];
-                        // Store images for this attempt
                         jsPsych.data.addProperties({
                             current_practice_images: images
                         });
                         return createTrialStimulus(images[0], images[1], index + 1, practiceTrials.length, true);
                     },
+                    choices: [],  // No choices available during viewing
+                    trial_duration: 1000,  // Images shown for 500ms
+                    data: {
+                        task: 'practice_viewing',
+                        trial_number: index + 1
+                    }
+                },
+                // Stage 2: Response period (3 seconds)
+                {
+                    type: jsPsychHtmlButtonResponse,
+                    stimulus: '<h2 class="trial-question">Are the top parts of the faces the same or different?</h2>',
                     choices: ['SAME', 'DIFFERENT'],
                     button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
+                    trial_duration: 3000,  // 3 seconds to respond
                     data: {
                         task: 'practice',
                         trial_number: index + 1,
@@ -314,7 +359,7 @@
                 {
                     type: jsPsychHtmlButtonResponse,
                     stimulus: function() {
-                        const lastTrial = jsPsych.data.get().last(1).values()[0];
+                        const lastTrial = jsPsych.data.get().filter({task: 'practice'}).last(1).values()[0];
                         if (lastTrial.correct) {
                             return `
                                 <h1 class="feedback-correct">Great job!</h1>
@@ -332,9 +377,7 @@
                 }
             ],
             loop_function: function() {
-                // Get the last practice trial response
                 const practiceData = jsPsych.data.get().filter({task: 'practice'}).last(1).values()[0];
-                // If incorrect, repeat the loop
                 return !practiceData.correct;
             }
         };
@@ -472,38 +515,63 @@
         
         const allFaces = females.concat(males);
         const shuffledConditions = shuffle(conditions);
+
+        const shuffledFaces = shuffle(allFaces);
+        const facesWithReuse = shuffledFaces.concat(shuffle(allFaces).slice(0, 8));
         
         let allTrials = getStimNames(allFaces, shuffledConditions);
         allTrials = shuffle(allTrials);
         
         // Randomize left/right and add trial numbers
         return allTrials.map((trial, index) => {
-            const images = Math.random() < 0.5 ? trial.images : [trial.images[1], trial.images[0]];
-            return {
-                timeline: [
-                    createFixation(),
-                    {
-                        type: jsPsychHtmlButtonResponse,
-                        stimulus: createTrialStimulus(images[0], images[1], index + 1, allTrials.length, false),
-                        choices: ['SAME', 'DIFFERENT'],
-                        button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
-                        data: {
-                            task: 'main',
-                            trial_number: index + 1,
-                            condition: trial.condition,
-                            correct_answer: trial.correctAnswer,
-                            image_left: images[0],
-                            image_right: images[1]
-                        },
-                        on_finish: function(data) {
-                            data.response_label = data.response === 0 ? 'same' : 'different';
-                            data.correct = data.response_label === data.correct_answer;
-                            data.response_time_ms = data.rt;
-                        }
+        const images = Math.random() < 0.5 ? trial.images : [trial.images[1], trial.images[0]];
+        trial.assignedImages = images;
+
+        return {
+            timeline: [
+                createFixation(),
+                // Stage 1: Show images for 1000ms
+                {
+                    type: jsPsychHtmlButtonResponse,
+                    stimulus: createTrialStimulus(images[0], images[1], index + 1, allTrials.length, false),
+                    choices: [],  // No choices available during viewing
+                    trial_duration: 1000,  // Images shown for 500ms
+                    data: {
+                        task: 'main_viewing',
+                        trial_number: index + 1,
+                        image_left: images[0],
+                        image_right: images[1]
                     }
-                ]
-            };
-        });
+                },
+                // Stage 2: Response period (3 seconds)
+                {
+                    type: jsPsychHtmlButtonResponse,
+                    stimulus: `
+                        <div style="text-align: center;">
+                            <p style="color: #666; font-size: 20px; margin-top: 10px;">Trial ${index + 1} of ${allTrials.length}</p>
+                            <h2 class="trial-question">Are the top parts of the faces the same or different?</h2>
+                        </div>
+                    `,
+                    choices: ['SAME', 'DIFFERENT'],
+                    button_html: ['<button class="jspsych-btn same-btn">%choice%</button>', '<button class="jspsych-btn different-btn">%choice%</button>'],
+                    trial_duration: 3000,  // 3 seconds to respond
+                    data: {
+                        task: 'main',
+                        trial_number: index + 1,
+                        condition: trial.condition,
+                        correct_answer: trial.correctAnswer,
+                        image_left: images[0],
+                        image_right: images[1]
+                    },
+                    on_finish: function(data) {
+                        data.response_label = data.response === 0 ? 'same' : 'different';
+                        data.correct = data.response_label === data.correct_answer;
+                        data.response_time_ms = data.rt;
+                    }
+                }
+            ]
+        };
+    });
     }
     
     const mainTrials = generateTrials();
@@ -531,7 +599,9 @@
         type: jsPsychPreload,
         images: getAllImageUrls(),
         message: 'Loading images... Please wait.',
-        show_progress_bar: true
+        show_progress_bar: true,
+        continue_after_error: true,
+        show_detailed_errors: true
     };
     
     // SRS Questionnaire
@@ -612,7 +682,29 @@
             options: ["Not True", "Sometimes True", "Often True", "Almost Always True"],
             required: true
         })),
-        button_label: 'Finish Questionnaire'
+        button_label: 'Finish Questionnaire',
+        on_finish: function(data) {
+            // Flatten the response object so it saves properly to CSV
+            const responses = data.response;
+            for (let key in responses) {
+                data[key] = responses[key];
+            }
+            
+            // Calculate SRS total raw score
+            const scoreMap = {
+                "Not True": 1,
+                "Sometimes True": 2,
+                "Often True": 3,
+                "Almost Always True": 4
+            };
+            
+            let totalScore = 0;
+            for (let i = 1; i <= srsQuestions.length; i++) {
+                totalScore += scoreMap[responses[`Q${i}`]];
+            }
+            
+            data.srs_total_score = totalScore;
+        }
     };
     
     // Exit fullscreen after main trials
@@ -621,7 +713,7 @@
         fullscreen_mode: false
     };
     
-    // Demographics questionnaire - combined with text and multiple choice
+   // Demographics questionnaire
     const demographics = {
         type: jsPsychHtmlButtonResponse,
         stimulus: `
@@ -640,6 +732,7 @@
                     <label class="radio-option"><input type="radio" name="race_ethnicity" value="Hispanic or Latino"> Hispanic or Latino</label>
                     <label class="radio-option"><input type="radio" name="race_ethnicity" value="Native Hawaiian or Other Pacific Islander"> Native Hawaiian or Other Pacific Islander</label>
                     <label class="radio-option"><input type="radio" name="race_ethnicity" value="White"> White</label>
+                    <label class="radio-option"><input type="radio" name="race_ethnicity" value="Mixed Race"> Mixed Race</label>
                     <label class="radio-option"><input type="radio" name="race_ethnicity" value="Other"> Other</label>
                 </div>
                 
@@ -675,7 +768,7 @@
         choices: ['Submit'],
         button_html: '<button class="jspsych-btn" id="demographics-submit">%choice%</button>',
         on_load: function() {
-            const submitBtn = document.getElementById('demographics-submit');
+            const submitButton = document.getElementById('demographics-submit');
             const ageInput = document.getElementById('age');
             const raceInputs = document.querySelectorAll('input[name="race_ethnicity"]');
             const sexInputs = document.querySelectorAll('input[name="sex"]');
@@ -692,6 +785,27 @@
             };
             
             const self = this;
+            
+            // Add validation before submit
+            const originalClick = submitButton.onclick;
+            submitButton.onclick = function(e) {
+                const age = ageInput.value.trim();
+                const raceSelected = Array.from(raceInputs).some(input => input.checked);
+                const sexSelected = Array.from(sexInputs).some(input => input.checked);
+                const eduSelected = Array.from(eduInputs).some(input => input.checked);
+                const livingSelected = Array.from(livingInputs).some(input => input.checked);
+                
+                if (!age || !raceSelected || !sexSelected || !eduSelected || !livingSelected) {
+                    alert('Please answer all of the questions below.');
+                    e.stopPropagation();
+                    return false;
+                }
+                
+                // If validation passes, call original handler
+                if (originalClick) {
+                    originalClick.call(this, e);
+                }
+            };
             
             // Update stored data when inputs change
             ageInput.addEventListener('input', function() {
@@ -733,12 +847,6 @@
         }
     };
     
-    // Exit fullscreen after demographics
-    const exit_fullscreen_demographics = {
-        type: jsPsychFullscreen,
-        fullscreen_mode: false
-    };
-    
     // Save data using DataPipe
     const save_data = {
         type: jsPsychPipe,
@@ -754,6 +862,8 @@
         stimulus: `
             <h1>Study Complete!</h1>
             <p>Thank you for participating in this study.</p>
+
+            <p>You will receive credit within 3 days of your participation.</p>
             
             <h2>What Are We Studying?</h2>
             <p>Thank you for participating in the study! In this experiment, we were looking at how people perceive faces.<p> 
@@ -773,6 +883,7 @@
     // Create timeline
     const timeline = [
         consent,
+        timeslot,
         instructions,
         preload,
         enter_fullscreen,
