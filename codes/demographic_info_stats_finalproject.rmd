@@ -1,0 +1,71 @@
+---
+title: "demographic_info"
+output: html_document
+date: "2025-12-01"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(writexl)
+
+# Set working directory
+setwd("/Users/annapusok/Desktop/stats_final_data/")
+
+# Get list of CSV files
+file_list <- list.files(pattern = "*.csv")
+
+# Extract demographics from each file
+demographics_data <- map_df(file_list, ~{
+  data <- read_csv(.x, col_types = cols(.default = col_guess()))
+  
+  # Extract the filename for reference
+  filename <- .x
+  
+  # Get subject_id (assuming it exists in the file)
+  subject_id <- ifelse("subject_id" %in% names(data), 
+                       first(na.omit(data$subject_id)), 
+                       NA)
+  
+  # Helper function to safely extract values
+  safe_extract <- function(data, col_name) {
+    if(col_name %in% names(data)) {
+      val <- first(na.omit(data[[col_name]]))
+      return(ifelse(length(val) == 0, NA, val))
+    } else {
+      return(NA)
+    }
+  }
+  
+  # Extract demographics safely
+  demo_info <- tibble(
+    filename = filename,
+    subject_id = subject_id,
+    age = safe_extract(data, "age"),
+    race_ethnicity = safe_extract(data, "race_ethnicity"),
+    sex = safe_extract(data, "sex"),
+    education = safe_extract(data, "education"),
+    living_status = safe_extract(data, "living_status")
+  )
+  
+  return(demo_info)
+})
+
+# Display the demographics data
+print(demographics_data)
+
+# Save to Excel
+write_xlsx(demographics_data, "participant_demographics.xlsx")
+
+cat("\nDemographics saved to: participant_demographics.xlsx\n")
+cat("Total participants:", nrow(demographics_data), "\n")
+
+# Show summary of what we found
+cat("\nSummary of demographic data:\n")
+cat("Age values found:", sum(!is.na(demographics_data$age)), "\n")
+cat("Sex values found:", sum(!is.na(demographics_data$sex)), "\n")
+cat("Race/ethnicity values found:", sum(!is.na(demographics_data$race_ethnicity)), "\n")
+cat("Education values found:", sum(!is.na(demographics_data$education)), "\n")
+cat("Living status values found:", sum(!is.na(demographics_data$living_status)), "\n")
+```
+
+
