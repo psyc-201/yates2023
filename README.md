@@ -1,4 +1,14 @@
-Replication of Yates & Lewkowicz (2023), Journal of Experimental Child Psychology
+# Composite Face Effect in Adults: A Replication Study
+
+## Overview
+This project replicates Yates & Lewkowicz (2023) to validate the composite face effect (CFE) paradigm in neurotypical adults before extending it to clinical populations.
+
+## Original Study
+**Citation:** Yates, T. S., & Lewkowicz, D. J. (2023). Robust Holistic Face Processing in Early Childhood During the COVID-19 Pandemic. Journal of Experimental Child Psychology, 105676. https://doi.org/10.1016/j.jecp.2023.105676
+
+**Research Question:** When does holistic face processing (measured by the composite face effect) emerge in typically developing children? How does masking due to the Covid-19 pandemic might influence children's face perception?
+
+**Key Findings:** Children as young as 4 years old demonstrate the composite face effect, indicating early emergence of holistic face processing.
 
 ## Current Study
 
@@ -14,8 +24,8 @@ Adults will show a significant composite face effect, with lower accuracy on ali
 
 ## Repository Structure
 ```
-├── original_paper/          # Original study materials and readings
-├── stimuli/              # Experiment stimuli and files
+├── original_paper/         # Original study materials and readings
+├── stimuli/                # Experiment stimuli and files
 ├── data/                   # Raw and processed data
 ├── analysis/               # Analysis scripts
 └── README.md
