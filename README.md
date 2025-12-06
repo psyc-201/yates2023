@@ -27,6 +27,6 @@ Adults will show a significant composite face effect, with lower accuracy on ali
 ├── original_paper/         # Original study materials and readings
 ├── stimuli/                # Experiment stimuli and files
 ├── data/                   # Raw and processed data
-├── analysis/               # Analysis scripts
+├── codes/                  # Analysis scripts
 └── README.md
 ```
