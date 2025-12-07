@@ -1,7 +1,7 @@
 # Composite Face Effect in Adults: A Replication Study
 
 ## Overview
-This project replicates Yates & Lewkowicz (2023) to validate the composite face effect (CFE) paradigm in neurotypical adults before replicating the study in children and adults with autism..
+This project replicates Yates & Lewkowicz (2023) to validate the composite face effect (CFE) paradigm in neurotypical adults before replicating the study in children and adults with autism.
 
 ## Original Study
 **Citation:** Yates, T. S., & Lewkowicz, D. J. (2023). Robust Holistic Face Processing in Early Childhood During the COVID-19 Pandemic. Journal of Experimental Child Psychology, 105676. https://doi.org/10.1016/j.jecp.2023.105676
