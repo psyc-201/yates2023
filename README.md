@@ -25,7 +25,7 @@ This project was preregistered on OSF. Please note: While the core analytical ap
 ```
 ├── original_paper/         # Original study materials and readings
 ├── stimuli/                # Experiment stimuli and files
-├── data/                   # Raw and processed data
+├── data/                   # Raw data files and demographics data excel file
 ├── codes/                  # Main study script and analysis scripts
 └── README.md
 ```
