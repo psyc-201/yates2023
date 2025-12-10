@@ -1,0 +1,548 @@
+---
+title: "stats_final_analyses_updated"
+output: html_document
+date: "2025-12-08"
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+# Load required libraries
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+library(ez)
+library(effsize)
+library(readxl)
+```
+
+# Data Loading and Preprocessing
+
+```{r load-data}
+# Set working directory
+setwd("/Users/annapusok/Desktop/stats_final_data/")
+
+# Read and combine all CSV files
+file_list <- list.files(pattern = "*.csv")
+all_data <- map_df(file_list, ~{
+  data <- read_csv(.x, col_types = cols(
+    response_time_ms = col_double(),
+    correct = col_character(),
+    .default = col_guess()
+  ))
+  
+  # Fill down sex column within each file
+  if("sex" %in% names(data)) {
+    data <- data %>% fill(sex, .direction = "down")
+  }
+  return(data)
+})
+
+# Convert correct to logical
+all_data <- all_data %>%
+  mutate(correct = as.logical(correct))
+
+# Filter main task trials only
+main_data <- all_data %>%
+  filter(task == "main", !is.na(correct), !is.na(response_time_ms))
+
+# Create alignment and correct_response variables
+main_data <- main_data %>%
+  mutate(
+    alignment = case_when(
+      condition %in% c("diff_align", "same_aligned") ~ "aligned",
+      condition %in% c("diff_misalign", "same_misaligned") ~ "misaligned"
+    ),
+    correct_response = case_when(
+      condition %in% c("diff_align", "diff_misalign") ~ "different",
+      condition %in% c("same_aligned", "same_misaligned") ~ "same"
+    ),
+    alignment = factor(alignment, levels = c("misaligned", "aligned"))
+  )
+
+# Load demographics and merge
+demographics <- read_xlsx("/Users/annapusok/Desktop/stats_final_data/participant_demographics.xlsx")
+main_data <- main_data %>%
+  select(-sex) %>%
+  left_join(demographics %>% select(subject_id, sex, srs_total_score), by = "subject_id")
+
+cat("\nMain trials after filtering:", nrow(main_data), "\n")
+```
+
+```{r data-quality}
+# Report trials with no response
+total_main_trials <- sum(all_data$task == "main", na.rm = TRUE)
+trials_with_response <- nrow(main_data)
+trials_no_response <- total_main_trials - trials_with_response
+
+cat("\nTrials excluded due to no response:", trials_no_response, 
+    "out of", total_main_trials, 
+    sprintf("(%.1f%%)", 100 * trials_no_response / total_main_trials), "\n")
+
+# Calculate accuracy by participant
+participant_accuracy <- main_data %>%
+  group_by(subject_id) %>%
+  summarise(
+    n_trials = n(),
+    n_correct = sum(correct),
+    accuracy = mean(correct),
+    .groups = "drop"
+  )
+
+# Identify participants performing below chance
+below_chance <- participant_accuracy %>%
+  filter(accuracy < 0.5)
+
+cat("\nTotal participants:", nrow(participant_accuracy), "\n")
+cat("Participants performing below chance (<50%):", nrow(below_chance), "\n\n")
+
+if (nrow(below_chance) > 0) {
+  cat("Participants with below-chance performance:\n")
+  print(below_chance, n = Inf)
+  
+  cat("\n--- Binomial Tests (testing if significantly below chance) ---\n")
+  for (i in 1:nrow(below_chance)) {
+    p_id <- below_chance$subject_id[i]
+    n_correct <- below_chance$n_correct[i]
+    n_trials <- below_chance$n_trials[i]
+    
+    binom_test <- binom.test(n_correct, n_trials, p = 0.5, alternative = "less")
+    
+    cat(sprintf("Participant %s: %d/%d correct (%.1f%%), p = %.4f %s\n",
+                p_id, n_correct, n_trials, below_chance$accuracy[i] * 100,
+                binom_test$p.value,
+                ifelse(binom_test$p.value < 0.05, "**", "")))
+  }
+}
+```
+
+# Accuracy Analysis
+
+```{r accuracy-descriptives}
+# Calculate accuracy by subject and condition
+accuracy_by_subject <- main_data %>%
+  group_by(subject_id, alignment, correct_response) %>%
+  summarise(
+    accuracy = mean(correct, na.rm = TRUE),
+    n_trials = n(),
+    .groups = "drop"
+  )
+
+# Overall means and SEs
+accuracy_means <- accuracy_by_subject %>%
+  group_by(alignment, correct_response) %>%
+  summarise(
+    mean_accuracy = mean(accuracy),
+    se_accuracy = sd(accuracy) / sqrt(n()),
+    n_subjects = n(),
+    .groups = "drop"
+  )
+
+print(accuracy_means)
+```
+
+```{r accuracy-ttests}
+# Paired t-tests for accuracy
+cat("\n--- Accuracy: Different Trials ---\n")
+diff_accuracy <- accuracy_by_subject %>%
+  filter(correct_response == "different") %>%
+  pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)
+
+if(all(c("aligned", "misaligned") %in% names(diff_accuracy))) {
+  diff_acc_test <- t.test(diff_accuracy$aligned, diff_accuracy$misaligned, paired = TRUE)
+  print(diff_acc_test)
+  cat("Effect size (Cohen's d):", 
+      (mean(diff_accuracy$aligned) - mean(diff_accuracy$misaligned)) / 
+        sd(diff_accuracy$aligned - diff_accuracy$misaligned), "\n")
+}
+
+cat("\n--- Accuracy: Same Trials ---\n")
+same_accuracy <- accuracy_by_subject %>%
+  filter(correct_response == "same") %>%
+  pivot_wider(names_from = alignment, values_from = accuracy, id_cols = subject_id)
+
+if(all(c("aligned", "misaligned") %in% names(same_accuracy))) {
+  same_acc_test <- t.test(same_accuracy$aligned, same_accuracy$misaligned, paired = TRUE)
+  print(same_acc_test)
+  cat("Effect size (Cohen's d):", 
+      (mean(same_accuracy$aligned) - mean(same_accuracy$misaligned)) / 
+        sd(same_accuracy$aligned - same_accuracy$misaligned), "\n")
+}
+
+# Additional analysis for same trials with effect size
+same_cohen_d <- cohen.d(same_accuracy$aligned, same_accuracy$misaligned, paired = TRUE)
+cat("\n=== Aligned Same vs Misaligned Same ===\n")
+cat("Aligned Same Mean:", mean(same_accuracy$aligned) * 100, "%\n")
+cat("Misaligned Same Mean:", mean(same_accuracy$misaligned) * 100, "%\n")
+cat("Cohen's d:", same_cohen_d$estimate, "\n")
+```
+
+```{r accuracy-anova}
+# Repeated-measures ANOVA for Same trials
+same_trials_agg <- main_data %>%
+  filter(correct_response == "same") %>%
+  group_by(subject_id, alignment) %>%
+  summarise(mean_accuracy = mean(correct, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    subject_id = factor(subject_id),
+    alignment = factor(alignment)
+  )
+
+ez_result <- ezANOVA(
+  data = same_trials_agg,
+  dv = mean_accuracy,
+  wid = subject_id,
+  within = alignment,
+  detailed = TRUE,
+  type = 3
+)
+print(ez_result)
+
+# Mixed ANOVA with sex as between-subjects factor
+cat("\n--- Mixed ANOVA: Accuracy on Same Trials (with sex) ---\n")
+same_trials <- main_data %>% filter(correct_response == "same")
+accuracy_model_same <- lmer(correct ~ alignment * sex + (1|subject_id), 
+                            data = same_trials)
+print(summary(accuracy_model_same))
+print(anova(accuracy_model_same))
+```
+
+```{r accuracy-plot, fig.width=8, fig.height=6}
+# Prepare data for plotting
+accuracy_same <- accuracy_means %>% 
+  filter(correct_response == "same") %>%
+  mutate(alignment = factor(alignment, levels = c("aligned", "misaligned")))
+
+# Calculate significance annotation position
+max_y <- max(accuracy_same$mean_accuracy) * 100 + max(accuracy_same$se_accuracy) * 100
+sig_y <- max_y + 3
+
+sig_annotation <- data.frame(
+  x = 1.5,
+  y = sig_y,
+  label = "***"
+)
+
+# Create plot
+accuracy_plot <- ggplot(accuracy_same, 
+                        aes(x = alignment, y = mean_accuracy * 100, fill = alignment)) +
+  geom_bar(stat = "identity", width = 0.4) +
+  geom_errorbar(aes(ymin = (mean_accuracy - se_accuracy) * 100, 
+                    ymax = (mean_accuracy + se_accuracy) * 100),
+                width = 0.2) +
+  geom_hline(yintercept = 50, linetype = "dashed", color = "black", linewidth = 0.5) +
+  # Significance bracket
+  geom_segment(aes(x = 1, xend = 2, y = sig_y, yend = sig_y),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_segment(aes(x = 1, xend = 1, y = sig_y - 1, yend = sig_y),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_segment(aes(x = 2, xend = 2, y = sig_y - 1, yend = sig_y),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_text(data = sig_annotation, aes(x = x, y = y + 1.5, label = label),
+            inherit.aes = FALSE, size = 5, fontface = "bold") +
+  scale_fill_manual(values = c("aligned" = "#8482e6", "misaligned" = "#98FB98"),
+                    labels = c("Aligned Same", "Misaligned Same")) +
+  labs(title = "Accuracy for Same Trials (Aligned vs. Misaligned)",
+       y = "Accuracy (% Correct)", 
+       x = "Alignment Condition",
+       fill = "Alignment",
+       caption = "*** p < 0.001") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top",
+        panel.grid.major.x = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 10)) +
+  scale_x_discrete(labels = c("Aligned", "Misaligned")) +
+  ylim(0, 105)
+
+print(accuracy_plot)
+ggsave("accuracy_same_plot.png", width = 8, height = 6, dpi = 300)
+```
+
+# Reaction Time Analysis
+
+```{r rt-descriptives}
+# Filter for correct trials only
+correct_data <- main_data %>%
+  filter(correct == 1)
+
+# Calculate RT by subject and condition
+rt_by_subject <- correct_data %>%
+  group_by(subject_id, alignment, correct_response) %>%
+  summarise(
+    mean_rt = mean(response_time_ms, na.rm = TRUE),
+    n_trials = n(),
+    .groups = "drop"
+  )
+
+# Overall RT means and SEs
+rt_means <- rt_by_subject %>%
+  group_by(alignment, correct_response) %>%
+  summarise(
+    mean_rt = mean(mean_rt),
+    se_rt = sd(mean_rt) / sqrt(n()),
+    n_subjects = n(),
+    .groups = "drop"
+  )
+
+print(rt_means)
+```
+
+```{r rt-ttests}
+# Paired t-tests for RT
+cat("\n--- RT: Different Trials ---\n")
+diff_rt <- rt_by_subject %>%
+  filter(correct_response == "different") %>%
+  pivot_wider(names_from = alignment, values_from = mean_rt, id_cols = subject_id)
+
+diff_rt_pval <- NA
+if(all(c("aligned", "misaligned") %in% names(diff_rt))) {
+  diff_rt_test <- t.test(diff_rt$aligned, diff_rt$misaligned, paired = TRUE)
+  print(diff_rt_test)
+  diff_rt_pval <- diff_rt_test$p.value
+  cat("Effect size (Cohen's d):", 
+      (mean(diff_rt$aligned) - mean(diff_rt$misaligned)) / 
+        sd(diff_rt$aligned - diff_rt$misaligned), "\n")
+}
+
+cat("\n--- RT: Same Trials ---\n")
+same_rt <- rt_by_subject %>%
+  filter(correct_response == "same") %>%
+  pivot_wider(names_from = alignment, values_from = mean_rt, id_cols = subject_id)
+
+same_rt_pval <- NA
+if(all(c("aligned", "misaligned") %in% names(same_rt))) {
+  same_rt_test <- t.test(same_rt$aligned, same_rt$misaligned, paired = TRUE)
+  print(same_rt_test)
+  same_rt_pval <- same_rt_test$p.value
+  cat("Effect size (Cohen's d):", 
+      (mean(same_rt$aligned) - mean(same_rt$misaligned)) / 
+        sd(same_rt$aligned - same_rt$misaligned), "\n")
+}
+```
+
+```{r rt-anova}
+# Repeated-measures ANOVA for Different trials
+diff_trials_rt_agg <- correct_data %>%
+  filter(correct_response == "different") %>%
+  group_by(subject_id, alignment) %>%
+  summarise(mean_rt = mean(response_time_ms, na.rm = TRUE), .groups = "drop") %>%
+  mutate(subject_id = factor(subject_id), alignment = factor(alignment))
+
+cat("\n--- Repeated-Measures ANOVA: RT on Different Trials ---\n")
+ez_diff_rt <- ezANOVA(
+  data = diff_trials_rt_agg,
+  dv = mean_rt,
+  wid = subject_id,
+  within = alignment,
+  detailed = TRUE,
+  type = 3
+)
+print(ez_diff_rt)
+
+# Repeated-measures ANOVA for Same trials
+same_trials_rt_agg <- correct_data %>%
+  filter(correct_response == "same") %>%
+  group_by(subject_id, alignment) %>%
+  summarise(mean_rt = mean(response_time_ms, na.rm = TRUE), .groups = "drop") %>%
+  mutate(subject_id = factor(subject_id), alignment = factor(alignment))
+
+cat("\n--- Repeated-Measures ANOVA: RT on Same Trials ---\n")
+ez_same_rt <- ezANOVA(
+  data = same_trials_rt_agg,
+  dv = mean_rt,
+  wid = subject_id,
+  within = alignment,
+  detailed = TRUE,
+  type = 3
+)
+print(ez_same_rt)
+
+# Extract p-values for plotting
+diff_rt_pval <- ez_diff_rt$ANOVA$p[2]
+same_rt_pval <- ez_same_rt$ANOVA$p[2]
+
+# Report in APA format
+cat("\n--- APA Format Results ---\n")
+cat("Different trials RT: F(1, 24) =", round(ez_diff_rt$ANOVA$F[2], 2), 
+    ", p =", round(diff_rt_pval, 4), 
+    ", ηG² =", round(ez_diff_rt$ANOVA$ges[2], 3), "\n")
+cat("Same trials RT: F(1, 24) =", round(ez_same_rt$ANOVA$F[2], 2), 
+    ", p =", round(same_rt_pval, 4), 
+    ", ηG² =", round(ez_same_rt$ANOVA$ges[2], 3), "\n")
+```
+
+```{r rt-plot, fig.width=8, fig.height=6}
+# Prepare data for plotting
+rt_means <- rt_means %>%
+  mutate(
+    alignment = factor(alignment, levels = c("aligned", "misaligned")),
+    correct_response = factor(correct_response, levels = c("same", "different")),
+    combined = interaction(alignment, correct_response, sep = "_"),
+    combined = factor(combined, levels = c(
+      "aligned_same", "misaligned_same",
+      "aligned_different", "misaligned_different"
+    ))
+  )
+
+# Define colors
+combined_colors <- c(
+  "aligned_same" = "#8482e6",
+  "misaligned_same" = "#98FB98",
+  "aligned_different" = "#524F81",
+  "misaligned_different" = "#228B22"
+)
+
+# Create plot
+rt_plot <- ggplot(rt_means, aes(x = combined, y = mean_rt, fill = combined)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_rt - se_rt, ymax = mean_rt + se_rt), width = 0.2) +
+  # Significance brackets for same trials
+  geom_segment(aes(x = 1, xend = 2, y = 740, yend = 740), 
+               color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = 1, xend = 1, y = 740, yend = 730), 
+               color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = 2, xend = 2, y = 740, yend = 730), 
+               color = "black", linewidth = 0.5) +
+  annotate("text", x = 1.5, y = 755, label = "***", size = 5) +
+  # Significance brackets for different trials
+  geom_segment(aes(x = 3, xend = 4, y = 740, yend = 740), 
+               color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = 3, xend = 3, y = 740, yend = 730), 
+               color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = 4, xend = 4, y = 740, yend = 730), 
+               color = "black", linewidth = 0.5) +
+  annotate("text", x = 3.5, y = 755, label = "ns", size = 5) +
+  scale_fill_manual(values = combined_colors,
+                    labels = c("Aligned\nSame", "Misaligned\nSame",
+                              "Aligned\nDifferent", "Misaligned\nDifferent")) +
+  labs(title = "Reaction Time by Alignment and Response Type",
+       y = "Reaction Time (ms)", 
+       x = "Condition",
+       fill = "Trial Type",
+       caption = "*** p < 0.001, ns = not significant") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top",
+        panel.grid.major.x = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 10)) +
+  coord_cartesian(ylim = c(0, 800))
+
+print(rt_plot)
+ggsave("rt_plot.png", width = 8, height = 6, dpi = 300)
+```
+
+```{r rt-spaghetti-plot, fig.width=8, fig.height=6}
+# Individual participant trajectories
+ggplot(rt_by_subject, aes(x = alignment, y = mean_rt, col = correct_response)) +
+  geom_point() +
+  geom_line(aes(group = subject_id)) +
+  facet_wrap(~correct_response) +
+  scale_color_manual(values = c("#38b6ff", "#ff914d")) +
+  labs(title = "Individual RT Trajectories by Alignment",
+       y = "Mean RT (ms)",
+       x = "Alignment") +
+  theme_minimal()
+
+ggsave("rt_by_subject.png", width = 8, height = 6, dpi = 300)
+```
+
+# Exploratory Analysis: SRS Correlations
+
+```{r srs-correlations}
+# Calculate per-participant performance metrics
+participant_performance <- main_data %>%
+  group_by(subject_id) %>%
+  summarise(
+    mean_accuracy = mean(correct, na.rm = TRUE),
+    mean_rt = mean(response_time_ms, na.rm = TRUE),
+    n_trials = n(),
+    .groups = "drop"
+  )
+
+# Merge with SRS scores
+analysis_data <- participant_performance %>%
+  left_join(demographics %>% select(subject_id, srs_total_score), by = "subject_id") %>%
+  filter(!is.na(srs_total_score))
+
+cat("\n=== Data Summary ===\n")
+cat("Participants with SRS scores:", nrow(analysis_data), "\n")
+
+# Pearson correlations
+cat("\n=== Correlation: SRS Total Score and Average Accuracy ===\n")
+cor_accuracy <- cor.test(analysis_data$srs_total_score, 
+                         analysis_data$mean_accuracy, 
+                         method = "pearson")
+print(cor_accuracy)
+
+cat("\n=== Correlation: SRS Total Score and Average Reaction Time ===\n")
+cor_rt <- cor.test(analysis_data$srs_total_score, 
+                   analysis_data$mean_rt, 
+                   method = "pearson")
+print(cor_rt)
+
+# Summary table
+correlation_summary <- tibble(
+  Variable = c("Average Accuracy", "Average RT"),
+  r = c(cor_accuracy$estimate, cor_rt$estimate),
+  p_value = c(cor_accuracy$p.value, cor_rt$p.value),
+  CI_lower = c(cor_accuracy$conf.int[1], cor_rt$conf.int[1]),
+  CI_upper = c(cor_accuracy$conf.int[2], cor_rt$conf.int[2])
+)
+print(correlation_summary)
+```
+
+```{r srs-plots, fig.width=12, fig.height=5}
+library(patchwork)
+
+# Scatterplot: SRS vs Accuracy
+plot_accuracy <- ggplot(analysis_data, aes(x = srs_total_score, y = mean_accuracy)) +
+  geom_point(size = 3, alpha = 0.7, color = "#2E86AB") +
+  geom_smooth(method = "lm", se = TRUE, color = "#A23B72", fill = "#A23B72", alpha = 0.2) +
+  labs(title = "SRS Total Score vs. Average Accuracy",
+       x = "SRS Total Score",
+       y = "Average Accuracy") +
+  annotate("text", x = Inf, y = -Inf, 
+           label = paste0("r = ", round(cor_accuracy$estimate, 3), 
+                         "\np = ", round(cor_accuracy$p.value, 3)),
+           hjust = 1.1, vjust = -0.5, size = 4) +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(size = 12))
+
+# Scatterplot: SRS vs RT
+plot_rt <- ggplot(analysis_data, aes(x = srs_total_score, y = mean_rt)) +
+  geom_point(size = 3, alpha = 0.7, color = "#2E86AB") +
+  geom_smooth(method = "lm", se = TRUE, color = "#A23B72", fill = "#A23B72", alpha = 0.2) +
+  labs(title = "SRS Total Score vs. Average RT",
+       x = "SRS Total Score",
+       y = "Average RT (ms)") +
+  annotate("text", x = Inf, y = -Inf, 
+           label = paste0("r = ", round(cor_rt$estimate, 3), 
+                         "\np = ", round(cor_rt$p.value, 3)),
+           hjust = 1.1, vjust = -0.5, size = 4) +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(size = 12))
+
+# Combine plots
+combined_plot <- plot_accuracy | plot_rt
+print(combined_plot)
+
+ggsave("SRS_correlations.png", combined_plot, width = 12, height = 5, dpi = 300)
+```
+
+# Export Summary Data
+
+```{r export-data}
+write_csv(accuracy_means, "accuracy_summary.csv")
+write_csv(rt_means, "rt_summary.csv")
+write_csv(accuracy_by_subject, "accuracy_by_subject.csv")
+write_csv(rt_by_subject, "rt_by_subject.csv")
+write_csv(correlation_summary, "srs_correlation_summary.csv")
+
+cat("\nAll summary files exported successfully!\n")
+```
+```
+
+
